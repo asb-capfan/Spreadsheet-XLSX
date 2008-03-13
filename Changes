@@ -1,0 +1,6 @@
+Revision history for Perl extension Spreadsheet::XLSC.
+
+0.01  Thu Mar 13 09:41:52 2008
+	- original version; created by h2xs 1.23 with options
+		-A -X -n Spreadsheet::XLSC --skip-exporter --skip-autoloader
+
