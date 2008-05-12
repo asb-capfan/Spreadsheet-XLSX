@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Spreadsheet-XLSX
-version:             0.01
+version:             0.02
 abstract:            Perl extension for reading MS Excel 2007 files;
 license:             ~
 author:              
@@ -8,7 +8,7 @@ author:
 generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
-    Archive::Zip:                  1.23
+    Archive::Zip:                  1.18
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3

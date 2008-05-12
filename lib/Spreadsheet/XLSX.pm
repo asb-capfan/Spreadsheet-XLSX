@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Archive::Zip;
 
@@ -112,7 +112,7 @@ sub new {
 			elsif (/^<\/v/) {
 				$flag = 0;
 			}
-			elsif ($_ && $flag) {
+			elsif (length ($_) && $flag) {
 			
 				my $v = $s ? $shared_strings [$_] : $_;
 			
