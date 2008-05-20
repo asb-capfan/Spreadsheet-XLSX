@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Spreadsheet-XLSX
-version:             0.02
+version:             0.03
 abstract:            Perl extension for reading MS Excel 2007 files;
 license:             ~
 author:              

@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Archive::Zip;
 
@@ -59,16 +59,16 @@ sub new {
 			MinCol => 1000000,
 		};
 		
-		foreach ($other =~ /(\w+\=\".*?\")/gsm) {
+		foreach ($other =~ /(\S+=".*?")/gsm) {
 
-			my ($k, $v) = split /\=?\"/;
+			my ($k, $v) = split /=?"/;
 	
 			if ($k eq 'name') {
 				$sheet -> {Name} = $v;
 				$sheet -> {Name} = $converter -> convert ($sheet -> {Name}) if $converter;
 			}
-			elsif ($k eq 'sheetId') {
-				$sheet -> {Id} = $v
+			elsif ($k eq 'r:id') {
+				($sheet -> {Id}) = $v =~ m{rId(\d+)};
 			};
 					
 		}
@@ -96,7 +96,8 @@ sub new {
 				
 				$col = ord ($1) - 65;
 				
-				if ($2) {		
+				if ($2) {
+                    $col++;
 					$col *= 26;
 					$col += (ord ($2) - 65);
 				}
@@ -242,9 +243,14 @@ module)
 
 Dmitry Ovsyanko, E<lt>do@eludia.ru<gt>, http://eludia.ru/wiki/
 
+Patches by:
+
+	Steve Simms
+	Joerg Meltzer
+
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 by root
+Copyright (C) 2008 by Dmitry Ovsyanko
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
