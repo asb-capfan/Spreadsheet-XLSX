@@ -1,12 +1,11 @@
 package Spreadsheet::XLSX;
 
-use 5.008008;
 use strict;
 use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Archive::Zip;
 
@@ -28,7 +27,7 @@ sub new {
 
 	if ($member_shared_strings) {
 	
-		foreach my $t ($member_shared_strings -> contents =~ /t\>([^\<]*)\<\/t/gsm) {
+		foreach my $t ($member_shared_strings -> contents =~ /\>([^\<]*)\<\/t/gsm) {
 			
 			$t = $converter -> convert ($t) if $converter;
 			
@@ -97,7 +96,7 @@ sub new {
 				$col = ord ($1) - 65;
 				
 				if ($2) {
-                    $col++;
+         				$col++;
 					$col *= 26;
 					$col += (ord ($2) - 65);
 				}
@@ -247,6 +246,7 @@ Patches by:
 
 	Steve Simms
 	Joerg Meltzer
+	Loreyna Yeung
 
 =head1 COPYRIGHT AND LICENSE
 

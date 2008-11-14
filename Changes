@@ -7,11 +7,14 @@ Revision history for Perl extension Spreadsheet::XLSC.
 
 0.02  Mon May 12 07:02:31 UTC 2008
 
-	- fixed a bug with 1st dictionnary string (thanx SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35489)
+	- fixed a bug with 1st dictionnary string (thanks SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35489)
 	- prereq relaxed (thanx SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35490)
 	
 0.03  Tue May 20 05:18:41 UTC 2008
 
-	- fixed the incorrect mapping for columns > AA (thanx JMELTZER http://rt.cpan.org/Public/Bug/Display.html?id=36013)
+	- fixed the incorrect mapping for columns > AA (thanks JMELTZER http://rt.cpan.org/Public/Bug/Display.html?id=36013)
 	- added support for r:id attribute (Ibid)
 
+0.04  Fri Nov 14 09:25:47 MSK 2008
+
+	- RE fixed for the case of opening <t ...> with attributes (thanks Loreyna Yeung)
