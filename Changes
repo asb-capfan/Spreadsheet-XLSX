@@ -18,3 +18,13 @@ Revision history for Perl extension Spreadsheet::XLSC.
 0.04  Fri Nov 14 09:25:47 MSK 2008
 
 	- RE fixed for the case of opening <t ...> with attributes (thanks Loreyna Yeung)
+
+0.05  Fri Dec 12 17:28:23 MSK 2008
+	
+	- a lot of fixes by Rob Polocz (dependency on Spreadsheet::ParseExcel introduced): 
+	
+	-- Added support for styles and formatted strings; 
+	-- create and use ParseExcel Workbook, Spreadsheet, and Cell objects; 
+	-- 1904 date convention support; 
+	-- empty tag support; 
+	-- received permission from the Spreadsheet::ParseExcel guys to leverage the formatting classes and check them in to this project.

@@ -7,6 +7,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Spreadsheet/XLSX.pm', # finds $VERSION
     PREREQ_PM         => {
 	'Archive::Zip' => 1.18,
+	'Spreadsheet::ParseExcel' => '',
     }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Spreadsheet/XLSX.pm', # retrieve abstract from module
