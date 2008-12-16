@@ -28,3 +28,7 @@ Revision history for Perl extension Spreadsheet::XLSC.
 	-- 1904 date convention support; 
 	-- empty tag support; 
 	-- received permission from the Spreadsheet::ParseExcel guys to leverage the formatting classes and check them in to this project.
+	
+0.06  Tue Dec 16 18:06:17 MSK 2008
+
+	- files missed from MANMIFEST and, therefore, from .tar.gz :-( Sorry, everybody!
