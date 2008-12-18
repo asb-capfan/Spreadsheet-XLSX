@@ -32,3 +32,7 @@ Revision history for Perl extension Spreadsheet::XLSC.
 0.06  Tue Dec 16 18:06:17 MSK 2008
 
 	- files missed from MANMIFEST and, therefore, from .tar.gz :-( Sorry, everybody!
+	
+0.07  Thu Dec 18 09:46:18 MSK 2008	
+
+	- "Use of uninitialized value ..." warnings suppressed (thanks Gregor Herrmann)

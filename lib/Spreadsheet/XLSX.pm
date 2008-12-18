@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -55,11 +55,11 @@ sub new {
                         push @styles, $t;
 
                 }
-		my $default = $1;
+		my $default = $1 || '';
 
 		foreach my $t1 (@styles){
 			$member_styles -> contents =~ /numFmtId="$t1" formatCode="([^"]*)/;
-			my $formatCode=$1;
+			my $formatCode = $1 || '';
 			if ($formatCode eq $default || not($formatCode)){
 				if ($t1 == 9 || $t1==10){ $formatCode="0.00000%";}
 				elsif ($t1 == 14){ $formatCode="m-d-yy";}
@@ -68,7 +68,7 @@ sub new {
 				}
 			}
 			$style_info{$t1} = $formatCode;
-			$default=$1;
+			$default = $1 || '';
 		}
 
         }
@@ -316,6 +316,7 @@ Patches by:
 	Joerg Meltzer
 	Loreyna Yeung	
 	Rob Polocz
+	Gregor Herrmann
 
 =head1 COPYRIGHT AND LICENSE
 

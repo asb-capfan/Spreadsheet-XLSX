@@ -3,6 +3,7 @@ use Test::More tests => 3;
 BEGIN {
 
 	use Spreadsheet::XLSX;
+	use warnings;
 	
 	my $fn = __FILE__;
 	
