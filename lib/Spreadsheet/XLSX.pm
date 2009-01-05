@@ -1,12 +1,12 @@
 package Spreadsheet::XLSX;
 
-use 5.008008;
+use 5.006000;
 use strict;
 use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
