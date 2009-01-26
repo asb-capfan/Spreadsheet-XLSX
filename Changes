@@ -1,23 +1,24 @@
 Revision history for Perl extension Spreadsheet::XLSC.
 
-0.01  Thu Mar 13 09:41:52 2008
+0.09  Mon Jan 26 09:57:04 MSK 2009
 
-	- original version; created by h2xs 1.23 with options
-		-A -X -n Spreadsheet::XLSC --skip-exporter --skip-autoloader
+	- fixed using of $1 after unsuccessful m// (thanks HMBRAND);
 
-0.02  Mon May 12 07:02:31 UTC 2008
+0.08  Mon Jan  5 18:07:57 MSK 2009
 
-	- fixed a bug with 1st dictionnary string (thanks SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35489)
-	- prereq relaxed (thanx SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35490)
+	- Perl version requirement lowered (thanks HMBRAND)
+
+0.07  Thu Dec 18 09:46:18 MSK 2008	
+
+	- "Use of uninitialized value ..." warnings suppressed (thanks Gregor Herrmann)
 	
-0.03  Tue May 20 05:18:41 UTC 2008
-
-	- fixed the incorrect mapping for columns > AA (thanks JMELTZER http://rt.cpan.org/Public/Bug/Display.html?id=36013)
-	- added support for r:id attribute (Ibid)
-
 0.04  Fri Nov 14 09:25:47 MSK 2008
 
 	- RE fixed for the case of opening <t ...> with attributes (thanks Loreyna Yeung)
+
+0.06  Tue Dec 16 18:06:17 MSK 2008
+
+	- files missed from MANIFEST and, therefore, from .tar.gz :-( Sorry, everybody!
 
 0.05  Fri Dec 12 17:28:23 MSK 2008
 	
@@ -28,15 +29,21 @@ Revision history for Perl extension Spreadsheet::XLSC.
 	-- 1904 date convention support; 
 	-- empty tag support; 
 	-- received permission from the Spreadsheet::ParseExcel guys to leverage the formatting classes and check them in to this project.
+
+0.03  Tue May 20 05:18:41 UTC 2008
+
+	- fixed the incorrect mapping for columns > AA (thanks JMELTZER http://rt.cpan.org/Public/Bug/Display.html?id=36013)
+	- added support for r:id attribute (Ibid)
+
+0.02  Mon May 12 07:02:31 UTC 2008
+
+	- fixed a bug with 1st dictionnary string (thanks SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35489)
+	- prereq relaxed (thanx SSIMMS: http://rt.cpan.org/Public/Bug/Display.html?id=35490)
+
+0.01  Thu Mar 13 09:41:52 2008
+
+	- original version; created by h2xs 1.23 with options
+		-A -X -n Spreadsheet::XLSC --skip-exporter --skip-autoloader
+
+
 	
-0.06  Tue Dec 16 18:06:17 MSK 2008
-
-	- files missed from MANMIFEST and, therefore, from .tar.gz :-( Sorry, everybody!
-	
-0.07  Thu Dec 18 09:46:18 MSK 2008	
-
-	- "Use of uninitialized value ..." warnings suppressed (thanks Gregor Herrmann)
-
-0.08  Mon Jan  5 18:07:57 MSK 2009
-
-	- Perl version requirement lowered (thanks HMBRAND)

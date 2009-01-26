@@ -14,7 +14,7 @@ use vars qw(@ISA @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(ExcelFmt LocaltimeExcel ExcelLocaltime 
                 col2int int2col sheetRef xls2csv);
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 #my $sNUMEXP = '^[+-]?\d+(\.\d+)?$';
 #my $sNUMEXP = '(^[+-]?\d+(\.\d+)?$)|(^[+-]?\d\.*(\d+)[eE][+-](\d+))$';

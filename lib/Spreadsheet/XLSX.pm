@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -148,11 +148,10 @@ sub new {
 				
 				$row = $3 - 1;
 				
-				$s  = /t=\"s\"/ ? 1 : 0;
-				$s2 = /t=\"str\"/ ? 1 : 0;
-				/s="([^"]*)"/; #"
+				$s   = m/t=\"s\"/      ?  1 : 0;
+				$s2  = m/t=\"str\"/    ?  1 : 0;
+				$sty = m/s="([0-9]+)"/ ? $1 : 0;
 
-				$sty = $1>0 ? $1 : 0 ;
 			}
 			elsif (/^<v/) {
 				$flag = 1;
@@ -317,6 +316,7 @@ Patches by:
 	Loreyna Yeung	
 	Rob Polocz
 	Gregor Herrmann
+	H.Merijn Brand
 
 =head1 COPYRIGHT AND LICENSE
 
