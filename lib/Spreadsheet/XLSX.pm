@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.09';
+our $VERSION = '0.1';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -31,17 +31,15 @@ sub new {
 	
 		my $mstr = $member_shared_strings->contents; 
 		$mstr =~ s/<t\/>/<t><\/t>/gsm;  # this handles an empty t tag in the xml <t/>
-
-		#foreach my $t ($member_shared_strings -> contents =~ /t\>([^\<]*)\<\/t/gsm) {
-		foreach my $t ($mstr =~ /<t.*?>(.*?)<\/t/gsm) {
-			$t = $converter -> convert ($t) if $converter;
-			
-			push @shared_strings, $t;
-		
-		}
-	
+		foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
+			my $str;
+			foreach my $t ($si =~ /<t.*?>(.*?)<\/t/gsm) {
+				$t = $converter -> convert ($t) if $converter;
+				$str .= $t;
+			}
+			push @shared_strings, $str;
+		}	
 	}
-
         my $member_styles = $self -> {zip} -> memberNamed ('xl/styles.xml');
 
         my @styles = ();
@@ -127,7 +125,7 @@ sub new {
 	
 		my $member_name  = "xl/worksheets/sheet$sheet->{Id}.xml";
 	
-		my $member_sheet = $self -> {zip} -> memberNamed ($member_name) or die ("$member_name not found in this zip\n");
+		my $member_sheet = $self -> {zip} -> memberNamed ($member_name) or next;
 	
 		my ($row, $col);
 		
@@ -317,6 +315,10 @@ Patches by:
 	Rob Polocz
 	Gregor Herrmann
 	H.Merijn Brand
+	
+=head1 ACKNOWLEDGEMENTS	
+
+	Thanks to TrackVia Inc. (http://www.trackvia.com) for paying for Rob Polocz working time.
 
 =head1 COPYRIGHT AND LICENSE
 

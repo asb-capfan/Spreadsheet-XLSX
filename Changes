@@ -1,4 +1,9 @@
-Revision history for Perl extension Spreadsheet::XLSC.
+Revision history for Perl extension Spreadsheet::XLSX.
+
+0.1   Wed Mar 25 18:19:46 MSK 2009
+
+	- bypassing empty sheets (thanks Lukasz Wilun for an example with diagrams);
+	- rich text within a cell (by Rob Polocz);
 
 0.09  Mon Jan 26 09:57:04 MSK 2009
 

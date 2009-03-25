@@ -12,12 +12,9 @@ use warnings;
 require Exporter;
 use vars qw(@ISA @EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(ExcelFmt LocaltimeExcel ExcelLocaltime 
-                col2int int2col sheetRef xls2csv);
-our $VERSION = '0.09';
+@EXPORT_OK = qw(ExcelFmt LocaltimeExcel ExcelLocaltime col2int int2col sheetRef xls2csv);
+our $VERSION = '0.1';
 
-#my $sNUMEXP = '^[+-]?\d+(\.\d+)?$';
-#my $sNUMEXP = '(^[+-]?\d+(\.\d+)?$)|(^[+-]?\d\.*(\d+)[eE][+-](\d+))$';
 my $sNUMEXP = '(^[+-]?\d+(\.\d+)?$)|(^[+-]?\d+\.?(\d*)[eE][+-](\d+))$';
 
 #------------------------------------------------------------------------------

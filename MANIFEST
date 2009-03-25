@@ -8,4 +8,6 @@ README
 t/0____________use.t
 t/1_____loreyna126.t
 t/1_____loreyna126.xlsx
+t/2_____with_chart.t
+t/2_____with_chart.xlsx
 META.yml                                 Module meta-data (added by MakeMaker)
