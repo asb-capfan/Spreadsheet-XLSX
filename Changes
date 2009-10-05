@@ -1,5 +1,9 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.11  Mon Oct  5 19:03:46 MSD 2009
+
+	- sheets numbering fixed (RT #50211, thanks endacoe)
+
 0.1   Wed Mar 25 18:19:46 MSK 2009
 
 	- bypassing empty sheets (thanks Lukasz Wilun for an example with diagrams);

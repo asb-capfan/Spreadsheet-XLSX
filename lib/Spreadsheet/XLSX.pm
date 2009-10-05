@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.1';
+our $VERSION = '0.11';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -107,8 +107,8 @@ sub new {
 				$sheet -> {Name} = $v;
 				$sheet -> {Name} = $converter -> convert ($sheet -> {Name}) if $converter;
 			}
-			elsif ($k eq 'r:id') {
-				($sheet -> {Id}) = $v =~ m{rId(\d+)};
+			elsif ($k eq 'sheetId')	{
+				($sheet -> {Id}) = $v;
 			};
 					
 		}
