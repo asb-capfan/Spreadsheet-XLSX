@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -71,7 +71,18 @@ sub new {
 
         }
 
+	my $member_rels = $self -> {zip} -> memberNamed ('xl/_rels/workbook.xml.rels') or die ("xl/_rels/workbook.xml.rels not found in this zip\n");
+	
+	my %rels = ();
+
+	foreach ($member_rels -> contents =~ /\<Relationship (.*?)\/?\>/g) {
+	
+		/^Id="(.*?)".*?Target="(.*?)"/ or next;
 		
+		$rels {$1} = $2;
+	
+	}
+
 	my $member_workbook = $self -> {zip} -> memberNamed ('xl/workbook.xml') or die ("xl/workbook.xml not found in this zip\n");
 	my $oBook = Spreadsheet::ParseExcel::Workbook->new;
 	$oBook->{SheetCount} = 0;
@@ -107,8 +118,10 @@ sub new {
 				$sheet -> {Name} = $v;
 				$sheet -> {Name} = $converter -> convert ($sheet -> {Name}) if $converter;
 			}
-			elsif ($k eq 'sheetId')	{
-				($sheet -> {Id}) = $v;
+			elsif ($k eq 'r:id')	{
+			
+				$sheet -> {path} = $rels {$v};
+				
 			};
 					
 		}
@@ -122,10 +135,8 @@ sub new {
 	$self -> {Worksheet} = \@Worksheet;
 	
 	foreach my $sheet (@Worksheet) {
-	
-		my $member_name  = "xl/worksheets/sheet$sheet->{Id}.xml";
-	
-		my $member_sheet = $self -> {zip} -> memberNamed ($member_name) or next;
+		
+		my $member_sheet = $self -> {zip} -> memberNamed ("xl/$sheet->{path}") or next;
 	
 		my ($row, $col);
 		
@@ -315,6 +326,8 @@ Patches by:
 	Rob Polocz
 	Gregor Herrmann
 	H.Merijn Brand
+	endacoe
+	Pat Mariani
 	
 =head1 ACKNOWLEDGEMENTS	
 

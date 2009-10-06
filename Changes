@@ -1,5 +1,9 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.12  Tue Oct  6 10:04:37 MSD 2009
+
+	- sheets are now detected by relations (xl/_rels/workbook.xml.rels), not numbers (RT #50236, thanks Pat Mariani)
+
 0.11  Mon Oct  5 19:03:46 MSD 2009
 
 	- sheets numbering fixed (RT #50211, thanks endacoe)
