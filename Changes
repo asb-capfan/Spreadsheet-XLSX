@@ -1,5 +1,9 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.13  Sun May 16 13:08:12 MSD 2010
+
+	- ability to read xlsx from filehandle (RT #57483, thanks Sergey Pushkin)
+
 0.12  Tue Oct  6 10:04:37 MSD 2009
 
 	- sheets are now detected by relations (xl/_rels/workbook.xml.rels), not numbers (RT #50236, thanks Pat Mariani)

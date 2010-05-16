@@ -6,7 +6,7 @@ use warnings;
 
 our @ISA = qw();
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use Archive::Zip;
 use Spreadsheet::XLSX::Fmt2007;
@@ -21,8 +21,19 @@ sub new {
 	
 	my $self = {};
 	
-	$self -> {zip} = Archive::Zip -> new ($filename) or die ("Cant't open $filename as a zip file\n");	
+	$self -> {zip} = Archive::Zip -> new ();
+
+	if (ref $filename) {
 	
+		$self -> {zip} -> readFromFileHandle ($filename) == Archive::Zip::AZ_OK or die ("Cannot open data as Zip archive");
+	
+	} 
+	else {
+	
+		$self -> {zip} -> read ($filename) == Archive::Zip::AZ_OK or die ("Cannot open $filename as Zip archive");
+	
+	};
+
 	my $member_shared_strings = $self -> {zip} -> memberNamed ('xl/sharedStrings.xml');
 	
 	my @shared_strings = ();
@@ -328,6 +339,7 @@ Patches by:
 	H.Merijn Brand
 	endacoe
 	Pat Mariani
+	Sergey Pushkin
 	
 =head1 ACKNOWLEDGEMENTS	
 
