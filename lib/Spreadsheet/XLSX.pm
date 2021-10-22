@@ -337,6 +337,11 @@ including Workbook, Worksheet, and Cell.
 
 =over 2
 
+=item L<Spreadsheet::ParseXLSX>
+
+This module has some serious issues with the way it uses regexs for parsing the XML.
+I would strongly encourage switching to L<Spreadsheet::ParseXLSX> which takes a more reliable approach.
+
 =item L<Text::CSV_XS>, L<Text::CSV_PP>
 
 =item L<Spreadsheet::ParseExcel>
