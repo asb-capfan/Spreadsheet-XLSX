@@ -328,55 +328,45 @@ Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files;
 
 =head1 DESCRIPTION
 
-This module is a (quick and dirty) emulation of Spreadsheet::ParseExcel for 
+This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for 
 Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks, 
-but not all.  It populates the classes from Spreadsheet::ParseExcel for interoperability; 
+but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability; 
 including Workbook, Worksheet, and Cell.
 
 =head1 SEE ALSO
 
 =over 2
 
-=item Text::CSV_XS, Text::CSV_PP
+=item L<Text::CSV_XS>, L<Text::CSV_PP>
 
-http://search.cpan.org/~hmbrand/
+=item L<Spreadsheet::ParseExcel>
 
-A pure perl version is available on http://search.cpan.org/~makamaka/
+=item L<Spreadsheet::ReadSXC>
 
-=item Spreadsheet::ParseExcel
+=item L<Spreadsheet::BasicRead>
 
-http://search.cpan.org/~kwitknr/
-
-=item Spreadsheet::ReadSXC
-
-http://search.cpan.org/~terhechte/
-
-=item Spreadsheet::BasicRead
-
-http://search.cpan.org/~gng/ for xlscat likewise functionality (Excel only)
+for xlscat likewise functionality (Excel only)
 
 =item Spreadsheet::ConvertAA
 
-http://search.cpan.org/~nkh/ for an alternative set of cell2cr () /
-cr2cell () pair
+for an alternative set of C<cell2cr()> / C<cr2cell()> pair
 
-=item Spreadsheet::Perl
+=item L<Spreadsheet::Perl>
 
-http://search.cpan.org/~nkh/ offers a Pure Perl implementation of a
+offers a Pure Perl implementation of a
 spreadsheet engine. Users that want this format to be supported in
-Spreadsheet::Read are hereby motivated to offer patches. It's not high
+L<Spreadsheet::Read> are hereby motivated to offer patches. It's not high
 on my todo-list.
 
 =item xls2csv
 
-http://search.cpan.org/~ken/ offers an alternative for my C<xlscat -c>,
+L<https://metacpan.org/release/KEN/xls2csv-1.07> offers an alternative for my C<xlscat -c>,
 in the xls2csv tool, but this tool focusses on character encoding
 transparency, and requires some other modules.
 
-=item Spreadsheet::Read
+=item L<Spreadsheet::Read>
 
-http://search.cpan.org/~hmbrand/ read the data from a spreadsheet (interface 
-module)
+read the data from a spreadsheet (interface module)
 
 =back
 
