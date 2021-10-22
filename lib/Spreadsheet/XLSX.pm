@@ -4,229 +4,284 @@ use 5.006000;
 use strict;
 use warnings;
 
-our @ISA = qw();
+use base 'Spreadsheet::ParseExcel::Workbook';
 
-our $VERSION = '0.13';
+our $VERSION = '0.15';
 
 use Archive::Zip;
-use Spreadsheet::XLSX::Fmt2007;
-use Data::Dumper;
 use Spreadsheet::ParseExcel;
+use Spreadsheet::XLSX::Fmt2007;
 
 ################################################################################
 
 sub new {
+    my ($class, $filename, $converter) = @_;
 
-	my ($class, $filename, $converter) = @_;
-	
-	my $self = {};
-	
-	$self -> {zip} = Archive::Zip -> new ();
+    my %shared_info;    # shared_strings, styles, style_info, rels, converter
+    $shared_info{converter} = $converter;
+    
+    my $self = bless Spreadsheet::ParseExcel::Workbook->new(), $class;
 
-	if (ref $filename) {
-	
-		$self -> {zip} -> readFromFileHandle ($filename) == Archive::Zip::AZ_OK or die ("Cannot open data as Zip archive");
-	
-	} 
-	else {
-	
-		$self -> {zip} -> read ($filename) == Archive::Zip::AZ_OK or die ("Cannot open $filename as Zip archive");
-	
-	};
+    my $zip                     = __load_zip($filename);
 
-	my $member_shared_strings = $self -> {zip} -> memberNamed ('xl/sharedStrings.xml');
-	
-	my @shared_strings = ();
+    $shared_info{shared_strings}= __load_shared_strings($zip, $shared_info{converter});
+    my ($styles, $style_info)   = __load_styles($zip);
+    $shared_info{styles}        = $styles;
+    $shared_info{style_info}    = $style_info;
+    $shared_info{rels}          = __load_rels($zip);
 
-	if ($member_shared_strings) {
-	
-		my $mstr = $member_shared_strings->contents; 
-		$mstr =~ s/<t\/>/<t><\/t>/gsm;  # this handles an empty t tag in the xml <t/>
-		foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
-			my $str;
-			foreach my $t ($si =~ /<t.*?>(.*?)<\/t/gsm) {
-				$t = $converter -> convert ($t) if $converter;
-				$str .= $t;
-			}
-			push @shared_strings, $str;
-		}	
-	}
-        my $member_styles = $self -> {zip} -> memberNamed ('xl/styles.xml');
+    $self->_load_workbook($zip, \%shared_info);
 
-        my @styles = ();
+    return $self;
+}
 
-	my %style_info = ();
+sub _load_workbook {
+    my ($self, $zip, $shared_info) = @_;
 
-        if ($member_styles) {
+    my $member_workbook = $zip->memberNamed('xl/workbook.xml') or die("xl/workbook.xml not found in this zip\n");
+    $self->{SheetCount} = 0;
+    $self->{FmtClass}   = Spreadsheet::XLSX::Fmt2007->new;
+    $self->{Flg1904}    = 0;
+    if ($member_workbook->contents =~ /date1904="1"/) {
+        $self->{Flg1904} = 1;
+    }
 
-                foreach my $t ($member_styles -> contents =~ /xf\ numFmtId="([^"]*)"(?!.*\/cellStyleXfs)/gsm) { #"
-                       # $t = $converter -> convert ($t) if $converter;
-                        push @styles, $t;
+    foreach ($member_workbook->contents =~ /\<(.*?)\/?\>/g) {
 
-                }
-		my $default = $1 || '';
+        /^(\w+)\s+/;
 
-		foreach my $t1 (@styles){
-			$member_styles -> contents =~ /numFmtId="$t1" formatCode="([^"]*)/;
-			my $formatCode = $1 || '';
-			if ($formatCode eq $default || not($formatCode)){
-				if ($t1 == 9 || $t1==10){ $formatCode="0.00000%";}
-				elsif ($t1 == 14){ $formatCode="m-d-yy";}
-				else {
-					$formatCode="";
-				}
-			}
-			$style_info{$t1} = $formatCode;
-			$default = $1 || '';
-		}
+        my ($tag, $other) = ($1, $');
+
+        my @pairs = split /\" /, $other;
+
+        $tag eq 'sheet' or next;
+
+        my $sheet = {
+            MaxRow => 0,
+            MaxCol => 0,
+            MinRow => 1000000,
+            MinCol => 1000000,
+        };
+
+        foreach ($other =~ /(\S+=".*?")/gsm) {
+
+            my ($k, $v) = split /=?"/;    #"
+
+            if ($k eq 'name') {
+                $sheet->{Name} = $v;
+                $sheet->{Name} = $shared_info->{converter}->convert($sheet->{Name}) if defined $shared_info->{converter};
+            } elsif ($k eq 'r:id') {
+
+                $sheet->{path} = $shared_info->{rels}->{$v};
+
+            }
 
         }
 
-	my $member_rels = $self -> {zip} -> memberNamed ('xl/_rels/workbook.xml.rels') or die ("xl/_rels/workbook.xml.rels not found in this zip\n");
-	
-	my %rels = ();
+        my $wsheet = Spreadsheet::ParseExcel::Worksheet->new(%$sheet);
+        $self->{Worksheet}[$self->{SheetCount}] = $wsheet;
+        $self->{SheetCount} += 1;
 
-	foreach ($member_rels -> contents =~ /\<Relationship (.*?)\/?\>/g) {
-	
-		/^Id="(.*?)".*?Target="(.*?)"/ or next;
-		
-		$rels {$1} = $2;
-	
-	}
+    }
 
-	my $member_workbook = $self -> {zip} -> memberNamed ('xl/workbook.xml') or die ("xl/workbook.xml not found in this zip\n");
-	my $oBook = Spreadsheet::ParseExcel::Workbook->new;
-	$oBook->{SheetCount} = 0;
-	$oBook->{FmtClass} = Spreadsheet::XLSX::Fmt2007->new;
-	$oBook->{Flg1904}=0;
-	if ($member_workbook->contents =~ /date1904="1"/){
-		$oBook->{Flg1904}=1;
-	}
-	my @Worksheet = ();
-	
-	foreach ($member_workbook -> contents =~ /\<(.*?)\/?\>/g) {
-	
-		/^(\w+)\s+/;
-		
-		my ($tag, $other) = ($1, $');
 
-		my @pairs = split /\" /, $other;
+    foreach my $sheet (@{$self->{Worksheet}}) {
 
-		$tag eq 'sheet' or next;
-		
-		my $sheet = {
-			MaxRow => 0,
-			MaxCol => 0,
-			MinRow => 1000000,
-			MinCol => 1000000,
-		};
-		
-		foreach ($other =~ /(\S+=".*?")/gsm) {
+        my $member_sheet = $zip->memberNamed("xl/$sheet->{path}") or next;
 
-			my ($k, $v) = split /=?"/; #"
-	
-			if ($k eq 'name') {
-				$sheet -> {Name} = $v;
-				$sheet -> {Name} = $converter -> convert ($sheet -> {Name}) if $converter;
-			}
-			elsif ($k eq 'r:id')	{
-			
-				$sheet -> {path} = $rels {$v};
-				
-			};
-					
-		}
-		my $wsheet = Spreadsheet::ParseExcel::Worksheet->new(%$sheet);
-		push @Worksheet, $wsheet;
-		$oBook->{Worksheet}[$oBook->{SheetCount}] = $wsheet;
-		$oBook->{SheetCount}+=1;
-				
-	}
+        my ($row, $col);
 
-	$self -> {Worksheet} = \@Worksheet;
-	
-	foreach my $sheet (@Worksheet) {
-		
-		my $member_sheet = $self -> {zip} -> memberNamed ("xl/$sheet->{path}") or next;
-	
-		my ($row, $col);
-		
-		my $flag = 0;
-		my $s    = 0;
-		my $s2   = 0;
-		my $sty  = 0;
-		foreach ($member_sheet -> contents =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
-			if (/^\<c r=\"([A-Z])([A-Z]?)(\d+)\"/) {
-				
-				$col = ord ($1) - 65;
-				
-				if ($2) {
-                			$col++;
-					$col *= 26;
-					$col += (ord ($2) - 65);
-				}
-				
-				$row = $3 - 1;
-				
-				$s   = m/t=\"s\"/      ?  1 : 0;
-				$s2  = m/t=\"str\"/    ?  1 : 0;
-				$sty = m/s="([0-9]+)"/ ? $1 : 0;
+        my $parsing_v_tag = 0;
+        my $s    = 0;
+        my $s2   = 0;
+        my $sty  = 0;
+        foreach ($member_sheet->contents =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
+            if (/^\<c\s*.*?\s*r=\"([A-Z])([A-Z]?)(\d+)\"/) {
 
-			}
-			elsif (/^<v/) {
-				$flag = 1;
-			}
-			elsif (/^<\/v/) {
-				$flag = 0;
-			}
-			elsif (length ($_) && $flag) {
-				my $v = $s ? $shared_strings [$_] : $_;
-				if ($v eq "</c>"){$v="";}
-				my $type = "Text";
-				my $thisstyle = "";
-				if (not($s) && not($s2)){
-					$type="Numeric";
-					$thisstyle = $style_info{$styles[$sty]};
-					if ($thisstyle =~ /(?<!Re)d|m|y/){
-						$type="Date";
-					}
-				}	
-				$sheet -> {MaxRow} = $row if $sheet -> {MaxRow} < $row;
-				$sheet -> {MaxCol} = $col if $sheet -> {MaxCol} < $col;
-				$sheet -> {MinRow} = $row if $sheet -> {MinRow} > $row;
-				$sheet -> {MinCol} = $col if $sheet -> {MinCol} > $col;
-				if ($v =~ /(.*)E\-(.*)/gsm && $type eq "Numeric"){
-					$v=$1/(10**$2);  # this handles scientific notation for very small numbers
-				}
-				my $cell =Spreadsheet::ParseExcel::Cell->new(
+                ($row, $col) = __decode_cell_name($1, $2, $3);
 
-					Val    => $v,
-					Format => $thisstyle,
-					Type => $type
-					
-				);
+                $s   = m/t=\"s\"/      ? 1  : 0;
+                $s2  = m/t=\"str\"/    ? 1  : 0;
+                $sty = m/s="([0-9]+)"/ ? $1 : 0;
 
-				$cell->{_Value} = $oBook->{FmtClass}->ValFmt($cell, $oBook);
-				if ($type eq "Date" && $v<1){  #then this is Excel time field
-					$cell->{Type}="Text";
-					$cell->{Val}=$cell->{_Value};
-				}
-				$sheet -> {Cells} [$row] [$col] = $cell;
-			}
-					
-		}
-		
-		$sheet -> {MinRow} = 0 if $sheet -> {MinRow} > $sheet -> {MaxRow};
-		$sheet -> {MinCol} = 0 if $sheet -> {MinCol} > $sheet -> {MaxCol};
+            } elsif (/^<v>/) {
+                $parsing_v_tag = 1;
+            } elsif (/^<\/v>/) {
+                $parsing_v_tag = 0;
+            } elsif (length($_) && $parsing_v_tag) {
+                my $v = $s ? $shared_info->{shared_strings}->[$_] : $_;
 
-	}
-foreach my $stys (keys %style_info){
+                if ($v eq "</c>") {
+                    $v = "";
+                }
+                my $type      = "Text";
+                my $thisstyle = "";
+
+                if (not($s) && not($s2)) {
+                    $type = "Numeric";
+
+                    if (defined $sty && defined $shared_info->{styles}->[$sty]) {
+                        $thisstyle = $shared_info->{style_info}->{$shared_info->{styles}->[$sty]};
+                        if ($thisstyle =~ /\b(mmm|m|d|yy|h|hh|mm|ss)\b/) {
+                            $type = "Date";
+                        }
+                    }
+                }
+
+
+                $sheet->{MaxRow} = $row if $sheet->{MaxRow} < $row;
+                $sheet->{MaxCol} = $col if $sheet->{MaxCol} < $col;
+                $sheet->{MinRow} = $row if $sheet->{MinRow} > $row;
+                $sheet->{MinCol} = $col if $sheet->{MinCol} > $col;
+
+                if ($v =~ /(.*)E\-(.*)/gsm && $type eq "Numeric") {
+                    $v = $1 / (10**$2);    # this handles scientific notation for very small numbers
+                }
+
+                my $cell = Spreadsheet::ParseExcel::Cell->new(
+                    Val    => $v,
+                    Format => $thisstyle,
+                    Type   => $type
+                );
+
+                $cell->{_Value} = $self->{FmtClass}->ValFmt($cell, $self);
+                if ($type eq "Date") {
+                    if ($v < 1) {    #then this is Excel time field
+                        $cell->{Type} = "Text";
+                    }
+                    $cell->{Val}  = $cell->{_Value};
+                }
+                $sheet->{Cells}[$row][$col] = $cell;
+            }
+        }
+
+        $sheet->{MinRow} = 0 if $sheet->{MinRow} > $sheet->{MaxRow};
+        $sheet->{MinCol} = 0 if $sheet->{MinCol} > $sheet->{MaxCol};
+
+    }
+
+    return $self;
 }
-	bless ($self, $class);
 
-	return $oBook;
+# Convert cell name in the format AA1 to a row and column number.
 
+sub __decode_cell_name {
+    my ($letter1, $letter2, $digits) = @_;
+
+    my $col = ord($letter1) - 65;
+
+    if ($letter2) {
+        $col++;
+        $col *= 26;
+        $col += (ord($letter2) - 65);
+    }
+
+    my $row = $digits - 1;
+
+    return ($row, $col);
 }
+
+
+sub __load_shared_strings {
+    my ($zip, $converter) = @_;
+
+    my $member_shared_strings = $zip->memberNamed('xl/sharedStrings.xml');
+
+    my @shared_strings = ();
+
+    if ($member_shared_strings) {
+
+        my $mstr = $member_shared_strings->contents;
+        $mstr =~ s/<t\/>/<t><\/t>/gsm;    # this handles an empty t tag in the xml <t/>
+        foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
+            my $str;
+            foreach my $t ($si =~ /<t.*?>(.*?)<\/t/gsm) {
+                $t = $converter->convert($t) if defined $converter;
+                $str .= $t;
+            }
+            push @shared_strings, $str;
+        }
+    }
+
+    return \@shared_strings;
+}
+
+
+sub __load_styles {
+    my ($zip) = @_;
+
+    my $member_styles = $zip->memberNamed('xl/styles.xml');
+
+    my @styles = ();
+    my %style_info = ();
+
+    if ($member_styles) {
+        my $formatter = Spreadsheet::XLSX::Fmt2007->new();
+
+        foreach my $t ($member_styles->contents =~ /xf\ numFmtId="([^"]*)"(?!.*\/cellStyleXfs)/gsm) {    #"
+            push @styles, $t;
+        }
+
+        my $default = $1 || '';
+    
+        foreach my $t1 (@styles) {
+            $member_styles->contents =~ /numFmtId="$t1" formatCode="([^"]*)/;
+            my $formatCode = $1 || '';
+            if ($formatCode eq $default || not($formatCode)) {
+                if ($t1 == 9 || $t1 == 10) {
+                    $formatCode = '0.00000%';
+                } elsif ($t1 == 14) {
+                    $formatCode = 'yyyy-mm-dd';
+                } else {
+                    $formatCode = '';
+                }
+#                $formatCode = $formatter->FmtStringDef($t1);
+            }
+            $style_info{$t1} = $formatCode;
+            $default = $1 || '';
+        }
+
+    }
+    return (\@styles, \%style_info);
+}
+
+
+sub __load_rels {
+    my ($zip) = @_;
+
+    my $member_rels = $zip->memberNamed('xl/_rels/workbook.xml.rels') or die("xl/_rels/workbook.xml.rels not found in this zip\n");
+
+    my %rels = ();
+
+    foreach ($member_rels->contents =~ /\<Relationship (.*?)\/?\>/g) {
+
+        my ($id, $target);
+        ($id) = /Id="(.*?)"/;
+        ($target) = /Target="(.*?)"/;
+ 
+	    if (defined $id and defined $target) {	
+    		$rels{$id} = $target;
+        }
+
+    }
+
+    return \%rels;
+}
+
+sub __load_zip {
+    my ($filename) = @_;
+
+    my $zip = Archive::Zip->new();
+
+    if (ref $filename) {
+        $zip->readFromFileHandle($filename) == Archive::Zip::AZ_OK or die("Cannot open data as Zip archive");
+    } else {
+        $zip->read($filename) == Archive::Zip::AZ_OK or die("Cannot open $filename as Zip archive");
+    }
+    
+    return $zip;
+}
+
 
 1;
 __END__

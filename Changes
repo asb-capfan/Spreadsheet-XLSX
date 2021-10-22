@@ -1,5 +1,14 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.15
+
+	- revert a numeric formatting change which caused isssues with Spreadsheet::Read.
+
+0.14  
+
+	- change default date format to yyyy-mm-dd.  This matches Spreadsheet::ParseExcel.
+	- handle xml tag attributes in varying order (RT #86667, et.al.)
+
 0.13  Sun May 16 13:08:12 MSD 2010
 
 	- ability to read xlsx from filehandle (RT #57483, thanks Sergey Pushkin)
