@@ -382,7 +382,7 @@ module)
 
 =head1 AUTHOR
 
-Dmitry Ovsyanko, E<lt>do@eludia.ru<gt>, http://eludia.ru/wiki/
+Dmitry Ovsyanko, E<lt>do@eludia.ruE<gt>, http://eludia.ru/wiki/
 
 Patches by:
 
