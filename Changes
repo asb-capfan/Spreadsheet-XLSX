@@ -1,5 +1,9 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.17
+
+	- fix RT #139898: missing file from MANIFEST
+
 0.16
 
 	- added GitHub repository
