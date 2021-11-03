@@ -11,6 +11,8 @@ t/1_____loreyna126.t
 t/1_____loreyna126.xlsx
 t/2_____with_chart.t
 t/2_____with_chart.xlsx
+t/3_____invalid_formular.t
+t/3_____invalid_formular.xlsx
 t/empty_v_tag.t
 t/empty_v_tag.xlsx
 t/formats.t
