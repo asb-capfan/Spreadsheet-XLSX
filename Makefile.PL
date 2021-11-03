@@ -13,6 +13,10 @@ WriteMakefile(
         'Spreadsheet::ParseExcel' => 0,
         'Test::NoWarnings' => 0,
     },
+    TEST_REQUIRES => {
+        'Test::More' => 0,
+        'Test::Warnings' => 0,
+    },
     META_MERGE     => {
         resources => {
             repository => 'https://github.com/asb-capfan/Spreadsheet-XLSX',

@@ -94,6 +94,9 @@ sub FmtString {
 
     #        $oBook->{Format}[$oCell->{FormatNo}]->{FmtIdx}, $oBook);
 
+    # Check for formula error before evaluating format
+    return '@' if ( $oCell->{Val} =~ m/^#/ );
+    
     unless (defined($sFmtStr)) {
         if ($oCell->{Type} eq 'Numeric') {
             if ($oCell->{Format}) {
