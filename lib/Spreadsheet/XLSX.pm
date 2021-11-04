@@ -288,7 +288,7 @@ __END__
 
 =head1 NAME
 
-Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files;
+Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files.
 
 =head1 SYNOPSIS
 
