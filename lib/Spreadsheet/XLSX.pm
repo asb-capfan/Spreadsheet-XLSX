@@ -95,7 +95,7 @@ sub _load_workbook {
         my $s    = 0;
         my $s2   = 0;
         my $sty  = 0;
-        foreach ($member_sheet->contents =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
+        foreach ($member_sheet->contents =~ /(\<.*?\/?\>|(?s).*?(?-s)(?=\<))/g) {
             if (/^\<c\s*.*?\s*r=\"([A-Z])([A-Z]?)(\d+)\"/) {
 
                 ($row, $col) = __decode_cell_name($1, $2, $3);
@@ -104,7 +104,7 @@ sub _load_workbook {
                 $s2  = m/t=\"str\"/    ? 1  : 0;
                 $sty = m/s="([0-9]+)"/ ? $1 : 0;
 
-            } elsif (/^<v>/) {
+            } elsif (/^<v.*?>/) {
                 $parsing_v_tag = 1;
             } elsif (/^<\/v>/) {
                 $parsing_v_tag = 0;
