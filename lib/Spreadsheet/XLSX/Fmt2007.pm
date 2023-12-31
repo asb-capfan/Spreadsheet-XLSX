@@ -52,7 +52,7 @@ my %hFmtDefault = (
 );
 
 #------------------------------------------------------------------------------
-# new (for Spreadsheet::XLSX::Utility2007)
+# new (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub new {
     my ($sPkg, %hKey) = @_;
@@ -62,7 +62,7 @@ sub new {
 }
 
 #------------------------------------------------------------------------------
-# TextFmt (for Spreadsheet::XLSX::Utility2007)
+# TextFmt (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub TextFmt {
     my ($oThis, $sTxt, $sCode) = @_;
@@ -71,7 +71,7 @@ sub TextFmt {
 }
 
 #------------------------------------------------------------------------------
-# FmtStringDef (for Spreadsheet::XLSX::Utility2007)
+# FmtStringDef (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub FmtStringDef {
     my ($oThis, $iFmtIdx, $oBook, $rhFmt) = @_;
@@ -85,7 +85,7 @@ sub FmtStringDef {
 }
 
 #------------------------------------------------------------------------------
-# FmtString (for Spreadsheet::XLSX::Utility2007)
+# FmtString (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub FmtString {
     my ($oThis, $oCell, $oBook) = @_;
@@ -122,7 +122,7 @@ sub FmtString {
 }
 
 #------------------------------------------------------------------------------
-# ValFmt (for Spreadsheet::XLSX::Utility2007)
+# ValFmt (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub ValFmt {
     my ($oThis, $oCell, $oBook) = @_;
@@ -140,7 +140,7 @@ sub ValFmt {
 }
 
 #------------------------------------------------------------------------------
-# ChkType (for Spreadsheet::XLSX::Utility2007)
+# ChkType (for Spreadsheet::XLSX::Fmt2007)
 #------------------------------------------------------------------------------
 sub ChkType {
     my ($oPkg, $iNumeric, $iFmtIdx) = @_;
