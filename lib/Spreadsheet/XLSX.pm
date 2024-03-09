@@ -6,7 +6,7 @@ use warnings;
 
 use base 'Spreadsheet::ParseExcel::Workbook';
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 use Archive::Zip;
 use Spreadsheet::ParseExcel;
