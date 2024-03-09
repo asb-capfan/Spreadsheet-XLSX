@@ -148,8 +148,8 @@ sub _load_workbook {
                 if ($type eq "Date") {
                     if ($v < 1) {    #then this is Excel time field
                         $cell->{Type} = "Text";
+                        $cell->{Val}  = $cell->{_Value};
                     }
-                    $cell->{Val}  = $cell->{_Value};
                 }
                 $sheet->{Cells}[$row][$col] = $cell;
             }
