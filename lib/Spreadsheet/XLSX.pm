@@ -339,7 +339,7 @@ including Workbook, Worksheet, and Cell.
 
 =item L<Spreadsheet::ParseXLSX>
 
-This module (Spradsheet::XLSX) has some serious issues with the way it uses regexs for parsing the XML.
+This module (Spreadsheet::XLSX) has some serious issues with the way it uses regexs for parsing the XML.
 I would strongly encourage switching to L<Spreadsheet::ParseXLSX> which takes a more reliable approach.
 
 =item L<Text::CSV_XS>, L<Text::CSV_PP>
