@@ -219,6 +219,12 @@ sub __load_styles {
     if ($member_styles) {
         my $formatter = Spreadsheet::XLSX::Fmt2007->new();
 
+        # IDs from both format declarations and style references are data,
+        # never regular-expression syntax.
+        foreach my $id ($member_styles->contents =~ /\bnumFmtId="([^"]*)"/g) {
+            die "Invalid XLSX number format ID\n" unless $id =~ /\A[0-9]+\z/;
+        }
+
         foreach my $t ($member_styles->contents =~ /xf\ numFmtId="([^"]*)"(?!.*\/cellStyleXfs)/gsm) {    #"
             push @styles, $t;
         }
@@ -226,7 +232,7 @@ sub __load_styles {
         my $default = $1 || '';
     
         foreach my $t1 (@styles) {
-            $member_styles->contents =~ /numFmtId="$t1" formatCode="([^"]*)/;
+            $member_styles->contents =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
             my $formatCode = $1 || '';
             if ($formatCode eq $default || not($formatCode)) {
                 if ($t1 == 9 || $t1 == 10) {
