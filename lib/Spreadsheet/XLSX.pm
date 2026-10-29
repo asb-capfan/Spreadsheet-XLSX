@@ -6,7 +6,7 @@ use warnings;
 
 use base 'Spreadsheet::ParseExcel::Workbook';
 
-our $VERSION = '0.19';
+our $VERSION = '0.20';
 
 our $MAX_MEMBER_SIZE = 64 * 1024 * 1024;
 our $MAX_TOTAL_SIZE  = 256 * 1024 * 1024;

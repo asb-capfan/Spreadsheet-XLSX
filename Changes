@@ -1,6 +1,6 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
-0.20  Not yet released
+0.20  2026-10-29
 
     - Security: limit ZIP entry counts and uncompressed sizes; read members
       incrementally and reject inconsistent size metadata.
