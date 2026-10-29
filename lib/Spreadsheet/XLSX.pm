@@ -8,6 +8,10 @@ use base 'Spreadsheet::ParseExcel::Workbook';
 
 our $VERSION = '0.19';
 
+our $MAX_MEMBER_SIZE = 64 * 1024 * 1024;
+our $MAX_TOTAL_SIZE  = 256 * 1024 * 1024;
+our $MAX_MEMBERS     = 10000;
+
 use Archive::Zip;
 use Spreadsheet::ParseExcel;
 use Spreadsheet::XLSX::Fmt2007;
@@ -42,11 +46,12 @@ sub _load_workbook {
     $self->{SheetCount} = 0;
     $self->{FmtClass}   = Spreadsheet::XLSX::Fmt2007->new;
     $self->{Flg1904}    = 0;
-    if ($member_workbook->contents =~ /date1904="1"/) {
+    my $workbook_xml = __member_contents($member_workbook);
+    if ($workbook_xml =~ /date1904="1"/) {
         $self->{Flg1904} = 1;
     }
 
-    foreach ($member_workbook->contents =~ /\<(.*?)\/?\>/g) {
+    foreach ($workbook_xml =~ /\<(.*?)\/?\>/g) {
 
         /^(\w+)\s+/;
 
@@ -95,7 +100,8 @@ sub _load_workbook {
         my $s    = 0;
         my $s2   = 0;
         my $sty  = 0;
-        foreach ($member_sheet->contents =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
+        my $sheet_xml = __member_contents($member_sheet);
+        foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
             if (/^<c(?:\s|\/?>)/) {
 
                 my ($reference) = /\sr="([^"]*)"/;
@@ -192,7 +198,7 @@ sub __load_shared_strings {
 
     if ($member_shared_strings) {
 
-        my $mstr = $member_shared_strings->contents;
+        my $mstr = __member_contents($member_shared_strings);
         $mstr =~ s/<t\/>/<t><\/t>/gsm;    # this handles an empty t tag in the xml <t/>
         foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
             my $str;
@@ -218,21 +224,22 @@ sub __load_styles {
 
     if ($member_styles) {
         my $formatter = Spreadsheet::XLSX::Fmt2007->new();
+        my $styles_xml = __member_contents($member_styles);
 
         # IDs from both format declarations and style references are data,
         # never regular-expression syntax.
-        foreach my $id ($member_styles->contents =~ /\bnumFmtId="([^"]*)"/g) {
+        foreach my $id ($styles_xml =~ /\bnumFmtId="([^"]*)"/g) {
             die "Invalid XLSX number format ID\n" unless $id =~ /\A[0-9]+\z/;
         }
 
-        foreach my $t ($member_styles->contents =~ /xf\ numFmtId="([^"]*)"(?!.*\/cellStyleXfs)/gsm) {    #"
+        foreach my $t ($styles_xml =~ /xf\ numFmtId="([^"]*)"(?!.*\/cellStyleXfs)/gsm) {    #"
             push @styles, $t;
         }
 
         my $default = $1 || '';
     
         foreach my $t1 (@styles) {
-            $member_styles->contents =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
+            $styles_xml =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
             my $formatCode = $1 || '';
             if ($formatCode eq $default || not($formatCode)) {
                 if ($t1 == 9 || $t1 == 10) {
@@ -260,7 +267,8 @@ sub __load_rels {
 
     my %rels = ();
 
-    foreach ($member_rels->contents =~ /\<Relationship (.*?)\/?\>/g) {
+    my $rels_xml = __member_contents($member_rels);
+    foreach ($rels_xml =~ /\<Relationship (.*?)\/?\>/g) {
 
         my ($id, $target);
         ($id) = /Id="(.*?)"/;
@@ -286,7 +294,48 @@ sub __load_zip {
         $zip->read($filename) == Archive::Zip::AZ_OK or die("Cannot open $filename as Zip archive");
     }
     
+    my @members = $zip->members();
+    die "XLSX ZIP entry count exceeds limit\n" if @members > $MAX_MEMBERS;
+    my $total = 0;
+    foreach my $member (@members) {
+        my $size = $member->uncompressedSize();
+        die "XLSX ZIP member size exceeds limit\n" if $size > $MAX_MEMBER_SIZE;
+        $total += $size;
+        die "XLSX ZIP total size exceeds limit\n" if $total > $MAX_TOTAL_SIZE;
+    }
+
     return $zip;
+}
+
+# readChunk() limits compressed input, not inflated output. Small input chunks
+# bound temporary inflate buffers; check output before appending it. Never trust
+# central-directory sizes alone: actual output must not exceed the declared size.
+sub __member_contents {
+    my ($member) = @_;
+    my $declared = $member->uncompressedSize();
+    die "XLSX ZIP member size exceeds limit\n" if $declared > $MAX_MEMBER_SIZE;
+    my $old_method = $member->desiredCompressionMethod(Archive::Zip::COMPRESSION_STORED);
+    my $contents = '';
+    my $ok = eval {
+        die "Cannot read XLSX ZIP member\n" unless $member->rewindData() == Archive::Zip::AZ_OK;
+        while (1) {
+            my ($buffer, $status) = $member->readChunk(1024);
+            die "Cannot read XLSX ZIP member\n"
+                unless $status == Archive::Zip::AZ_OK || $status == Archive::Zip::AZ_STREAM_END;
+            my $size = length($contents) + length($$buffer);
+            die "XLSX ZIP member size exceeds limit\n" if $size > $MAX_MEMBER_SIZE;
+            die "XLSX ZIP member size does not match metadata\n" if $size > $declared;
+            $contents .= $$buffer;
+            last if $status == Archive::Zip::AZ_STREAM_END;
+        }
+        die "XLSX ZIP member size does not match metadata\n" if length($contents) != $declared;
+        1;
+    };
+    my $error = $@;
+    $member->endRead();
+    $member->desiredCompressionMethod($old_method);
+    die $error unless $ok;
+    return $contents;
 }
 
 
@@ -334,6 +383,22 @@ Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files.
     }
 
 =head1 DESCRIPTION
+
+ZIP input is limited to 10,000 entries, 64 MiB per uncompressed member, and
+256 MiB of total declared uncompressed data, including unused members.
+Members used by the parser are decompressed incrementally and their actual
+sizes are checked against the limits and ZIP metadata. Exceeding a limit or
+encountering inconsistent sizes raises an exception.
+
+Applications needing different limits can scope them to a parsing operation:
+
+    local $Spreadsheet::XLSX::MAX_MEMBER_SIZE = 128 * 1024 * 1024;
+    local $Spreadsheet::XLSX::MAX_TOTAL_SIZE = 512 * 1024 * 1024;
+    local $Spreadsheet::XLSX::MAX_MEMBERS = 20000;
+    my $excel = Spreadsheet::XLSX->new($filename);
+
+These limits bound uncompressed input, not the total memory used by parsed
+cells and XML processing.
 
 This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for 
 Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks, 
