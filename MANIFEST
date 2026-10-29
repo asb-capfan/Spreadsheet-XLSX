@@ -16,6 +16,7 @@ t/3_____invalid_formular.xlsx
 t/empty_v_tag.t
 t/empty_v_tag.xlsx
 t/formats.t
+t/format_conditions.t
 t/formats.xlsx
 t/kwalitee.t
 t/missing_styles.t
