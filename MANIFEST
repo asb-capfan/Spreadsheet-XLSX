@@ -1,4 +1,5 @@
 Changes
+cpanfile
 lib/Spreadsheet/XLSX.pm
 lib/Spreadsheet/XLSX/Fmt2007.pm
 lib/Spreadsheet/XLSX/Utility2007.pm

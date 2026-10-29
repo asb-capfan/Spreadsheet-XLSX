@@ -9,6 +9,8 @@ Revision history for Perl extension Spreadsheet::XLSX.
     - Security: reject out-of-range date values to prevent excessive CPU usage.
     - Security: validate cell references against XLSX worksheet limits before
       indexing cell arrays, preventing excessive allocation from invalid rows.
+    - Add cpanfile for easy dependency installation.
+    - Improve Readme.
 
 0.19  2026-10-29
 
