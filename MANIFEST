@@ -18,6 +18,7 @@ t/empty_v_tag.xlsx
 t/formats.t
 t/format_conditions.t
 t/cell_references.t
+t/date_limits.t
 t/formats.xlsx
 t/kwalitee.t
 t/missing_styles.t

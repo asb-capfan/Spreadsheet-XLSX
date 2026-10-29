@@ -712,6 +712,14 @@ sub LocaltimeExcel {
 #------------------------------------------------------------------------------
 sub ExcelLocaltime {
     my ($dObj, $flg1904) = @_;
+    # Excel dates end on 9999-12-31; allow the fractional time on that day.
+    # Check before int() and the year loop, including numbers that overflow
+    # to infinity when converted from scientific notation.
+    my $limit = $flg1904 ? 2957004 : 2958466;
+    die "Invalid or out-of-range XLSX date value\n"
+        unless defined($dObj)
+        && $dObj =~ /\A[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\z/
+        && $dObj >= 0 && $dObj < $limit;
     my ($iSec, $iMin, $iHour, $iDay, $iMon, $iYear, $iwDay, $iMSec);
     my ($iDt, $iTime, $iYDays);
 
