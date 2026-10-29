@@ -1,5 +1,10 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+0.20  Not yet released
+
+    - Security: validate cell references against XLSX worksheet limits before
+      indexing cell arrays, preventing excessive allocation from invalid rows.
+
 0.19  2026-10-29
 
     - Security: replace string eval of number-format conditions with strict

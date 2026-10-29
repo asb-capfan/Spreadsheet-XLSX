@@ -96,9 +96,10 @@ sub _load_workbook {
         my $s2   = 0;
         my $sty  = 0;
         foreach ($member_sheet->contents =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
-            if (/^\<c\s*.*?\s*r=\"([A-Z])([A-Z]?)(\d+)\"/) {
+            if (/^<c(?:\s|\/?>)/) {
 
-                ($row, $col) = __decode_cell_name($1, $2, $3);
+                my ($reference) = /\sr="([^"]*)"/;
+                ($row, $col) = __decode_cell_name($reference);
 
                 $s   = m/t=\"s\"/      ? 1  : 0;
                 $s2  = m/t=\"str\"/    ? 1  : 0;
@@ -163,22 +164,22 @@ sub _load_workbook {
     return $self;
 }
 
-# Convert cell name in the format AA1 to a row and column number.
+# Validate before numeric conversion or using a reference as an array index.
+# XLSX worksheets have at most 1,048,576 rows and 16,384 columns (XFD).
 
 sub __decode_cell_name {
-    my ($letter1, $letter2, $digits) = @_;
+    my ($reference) = @_;
+    die "Invalid XLSX cell reference\n"
+        unless defined($reference)
+        && $reference =~ /\A([A-Z]{1,3})([1-9][0-9]{0,6})\z/;
+    my ($letters, $digits) = ($1, $2);
+    die "XLSX cell row exceeds worksheet limit\n" if $digits > 1048576;
 
-    my $col = ord($letter1) - 65;
+    my $col = 0;
+    $col = $col * 26 + ord($_) - ord('A') + 1 for split //, $letters;
+    die "XLSX cell column exceeds worksheet limit\n" if $col > 16384;
 
-    if ($letter2) {
-        $col++;
-        $col *= 26;
-        $col += (ord($letter2) - 65);
-    }
-
-    my $row = $digits - 1;
-
-    return ($row, $col);
+    return ($digits - 1, $col - 1);
 }
 
 
