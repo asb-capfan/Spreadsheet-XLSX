@@ -1,5 +1,10 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
+Unreleased
+
+    - Fix multiline cell values and value tags with attributes (GitHub PR #1).
+      Preserve whitespace and add regression tests.
+
 0.20  2026-10-29
 
     - Security: limit ZIP entry counts and uncompressed sizes; read members

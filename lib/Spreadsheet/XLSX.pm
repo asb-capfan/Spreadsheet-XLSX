@@ -101,7 +101,7 @@ sub _load_workbook {
         my $s2   = 0;
         my $sty  = 0;
         my $sheet_xml = __member_contents($member_sheet);
-        foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/g) {
+        foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/gs) {
             if (/^<c(?:\s|\/?>)/) {
 
                 my ($reference) = /\sr="([^"]*)"/;
@@ -111,8 +111,8 @@ sub _load_workbook {
                 $s2  = m/t=\"str\"/    ? 1  : 0;
                 $sty = m/s="([0-9]+)"/ ? $1 : 0;
 
-            } elsif (/^<v>/) {
-                $parsing_v_tag = 1;
+            } elsif (/^<v(?:\s[^<>]*?)?>$/) {
+                $parsing_v_tag = !/\/>$/;
             } elsif (/^<\/v>/) {
                 $parsing_v_tag = 0;
             } elsif (length($_) && $parsing_v_tag) {
