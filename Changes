@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Preserve custom number formats referenced by multiple cell styles
+      (RT #132420). Add regression tests for repeated format IDs.
+
     - Move MaxCol initialization outside the row loop in the SYNOPSIS
       example (RT #140481).
 

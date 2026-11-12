@@ -236,12 +236,11 @@ sub __load_styles {
             push @styles, $t;
         }
 
-        my $default = $1 || '';
-    
         foreach my $t1 (@styles) {
-            $styles_xml =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
-            my $formatCode = $1 || '';
-            if ($formatCode eq $default || not($formatCode)) {
+            # A repeated format ID still refers to the same explicit format.
+            # List context avoids reusing $1 from an earlier successful match.
+            my ($formatCode) = $styles_xml =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
+            if (!defined($formatCode) || $formatCode eq '') {
                 if ($t1 == 9 || $t1 == 10) {
                     $formatCode = '0.00000%';
                 } elsif ($t1 == 14) {
@@ -252,7 +251,6 @@ sub __load_styles {
 #                $formatCode = $formatter->FmtStringDef($t1);
             }
             $style_info{$t1} = $formatCode;
-            $default = $1 || '';
         }
 
     }
