@@ -2,6 +2,8 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Remove unused variables from ValFmt (RT #158167).
+
     - Fix multiline cell values and value tags with attributes (GitHub PR #1).
       Preserve whitespace and add regression tests.
 
