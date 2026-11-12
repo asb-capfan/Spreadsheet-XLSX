@@ -363,11 +363,10 @@ Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files.
         printf("Sheet: %s\n", $sheet->{Name});
         
         $sheet->{MaxRow} ||= $sheet->{MinRow};
+        $sheet->{MaxCol} ||= $sheet->{MinCol};
         
         foreach my $row ($sheet->{MinRow} .. $sheet->{MaxRow}) {
              
-            $sheet->{MaxCol} ||= $sheet->{MinCol};
-            
             foreach my $col ($sheet->{MinCol} ..  $sheet->{MaxCol}) {
             
                 my $cell = $sheet->{Cells}[$row][$col];

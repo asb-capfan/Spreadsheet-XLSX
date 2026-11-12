@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Move MaxCol initialization outside the row loop in the SYNOPSIS
+      example (RT #140481).
+
     - Remove unused variables from ValFmt (RT #158167).
 
     - Fix multiline cell values and value tags with attributes (GitHub PR #1).
