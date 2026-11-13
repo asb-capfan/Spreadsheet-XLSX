@@ -265,6 +265,7 @@ sub ExcelFmt {
                 push @aRep, [substr($sFmtObj, $i, 4), length($sFmtRes), 4];
                 $i += 4;
             } elsif ((substr($sFmtObj, $i, 3) eq 'mmm')
+                || (substr($sFmtObj, $i, 3) eq 'ddd')
                 || (substr($sFmtObj, $i, 3) eq 'yyy')) {
                 push @aRep, [substr($sFmtObj, $i, 3), length($sFmtRes), 3];
                 $i += 3;
@@ -341,8 +342,8 @@ sub ExcelFmt {
         my @aMonL = qw (dum January February March April May June July
           August September October November December );
         my @aMonNm  = qw (dum Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-        my @aWeekNm = qw (Mon Tue Wed Thu Fri Sat Sun);
-        my @aWeekL  = qw (Monday Tuesday Wednesday Thursday Friday Saturday Sunday);
+        my @aWeekNm = qw (Sun Mon Tue Wed Thu Fri Sat);
+        my @aWeekL  = qw (Sunday Monday Tuesday Wednesday Thursday Friday Saturday);
         my $sRep;
         for (my $iIt = $#aRep ; $iIt >= 0 ; $iIt--) {
             my $rItem = $aRep[$iIt];
@@ -378,9 +379,9 @@ sub ExcelFmt {
 
             #Day
             elsif ($rItem->[0] eq 'dddd') {
-                $sRep = $aWeekL[$aTime[7]];
+                $sRep = $aWeekL[$aTime[6]];
             } elsif ($rItem->[0] eq 'ddd') {
-                $sRep = $aWeekNm[$aTime[7]];
+                $sRep = $aWeekNm[$aTime[6]];
             } elsif ($rItem->[0] eq 'dd') {
                 $sRep = sprintf('%02d', $aTime[3]);
             } elsif ($rItem->[0] eq 'd') {

@@ -2,6 +2,10 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Fix short and long weekday formatting and recognize standalone date
+      and AM/PM formats as date/time cells (RT #117007). Ignore quoted and
+      escaped literals during date-type detection; add regression tests.
+
     - Support inlineStr cells (RT #117462, #83399), including rich text,
       whitespace, empty strings, converters and separate phonetic metadata.
       Share text extraction with shared strings; add regression tests.

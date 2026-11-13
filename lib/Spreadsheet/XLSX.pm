@@ -169,7 +169,10 @@ sub _load_workbook {
 
                     if (defined $sty && defined $shared_info->{styles}->[$sty]) {
                         $thisstyle = $shared_info->{style_info}->{$shared_info->{styles}->[$sty]};
-                        if ($thisstyle =~ /\b(mmm|m|d|yy|h|hh|mm|ss)\b/) {
+                        # Literal text and escaped characters are not date tokens.
+                        my $date_format = Spreadsheet::XLSX::Utility2007::unescape_HTML($thisstyle);
+                        $date_format =~ s/"[^"]*"|\\.|_.|\*.//g;
+                        if ($date_format =~ /\b(?:m{1,5}|d{1,4}|y{2,4}|h{1,2}|s{1,2}|(?i:am\/pm|a\/p))\b/) {
                             $type = "Date";
                         }
                     }
