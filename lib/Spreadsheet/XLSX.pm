@@ -438,6 +438,13 @@ Spreadsheet::XLSX - Perl extension for reading MS Excel 2007 files.
 
 =head1 DESCRIPTION
 
+This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for
+Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks,
+but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability;
+including Workbook, Worksheet, and Cell.
+
+=head1 LIMITATIONS AND PARSE ERRORS
+
 ZIP input is limited to 10,000 entries, 64 MiB per uncompressed member, and
 256 MiB of total declared uncompressed data, including unused members.
 Members used by the parser are decompressed incrementally and their actual
@@ -453,13 +460,6 @@ Applications needing different limits can scope them to a parsing operation:
 
 These limits bound uncompressed input, not the total memory used by parsed
 cells and XML processing.
-
-This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for 
-Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks, 
-but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability; 
-including Workbook, Worksheet, and Cell.
-
-=head1 LIMITATIONS AND PARSE ERRORS
 
 The module uses regular expressions to extract workbook data. It does
 B<not> perform full XML validation or XLSX schema validation. Some obvious
@@ -504,7 +504,7 @@ I would strongly encourage switching to L<Spreadsheet::ParseXLSX> which takes a 
 
 for xlscat likewise functionality (Excel only)
 
-=item Spreadsheet::ConvertAA
+=item L<Spreadsheet::ConvertAA>
 
 for an alternative set of C<cell2cr()> / C<cr2cell()> pair
 
@@ -529,7 +529,7 @@ read the data from a spreadsheet (interface module)
 
 =head1 AUTHOR
 
-Dmitry Ovsyanko, E<lt>do@eludia.ruE<gt>, http://eludia.ru/wiki/
+Dmitry Ovsyanko
 
 Patches by:
 
