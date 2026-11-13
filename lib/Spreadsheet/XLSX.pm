@@ -101,6 +101,9 @@ sub _load_workbook {
         my $s    = 0;
         my $s2   = 0;
         my $sty  = 0;
+        my $inline = 0;
+        my $parsing_inline = 0;
+        my $inline_xml = '';
         my $sheet_xml = __xml_contents($member_sheet);
         foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/gs) {
             if (/^<c(?:\s|\/?>)/) {
@@ -113,12 +116,47 @@ sub _load_workbook {
                 $s2  = m/t=\"str\"/    ? 1  : 0;
                 $sty = m/s="([0-9]+)"/ ? $1 : 0;
 
-            } elsif (/^<v(?:\s[^<>]*?)?>$/) {
-                $parsing_v_tag = !/\/>$/;
-            } elsif (/^<\/v>/) {
+                $inline = /\bt="inlineStr"/ ? 1 : 0;
                 $parsing_v_tag = 0;
-            } elsif (length($_) && $parsing_v_tag) {
-                my $v = $s ? $shared_info->{shared_strings}->[$_] : $_;
+                $parsing_inline = 0;
+                $inline_xml = '';
+                next;
+            }
+
+            if ($inline) {
+                if (/^<is(?:\s[^<>]*?)?\s*\/?>$/) {
+                    $inline_xml = '';
+                    $parsing_inline = !/\/>$/;
+                    next if $parsing_inline;
+                } elsif ($parsing_inline) {
+                    if (/^<\/is\s*>$/) {
+                        $parsing_inline = 0;
+                    } else {
+                        $inline_xml .= $_;
+                        next;
+                    }
+                } else {
+                    next;
+                }
+            } else {
+                if (/^<v(?:\s[^<>]*?)?>$/) {
+                    $parsing_v_tag = !/\/>$/;
+                    next;
+                } elsif (/^<\/v>/) {
+                    $parsing_v_tag = 0;
+                    next;
+                }
+                next unless length($_) && $parsing_v_tag;
+            }
+
+            {
+                my ($v, $phonetics);
+                if ($inline) {
+                    ($v, $phonetics) = __parse_string($inline_xml, $shared_info->{converter});
+                } else {
+                    $v = $s ? $shared_info->{shared_strings}->[$_] : $_;
+                    $phonetics = $shared_info->{phonetics}->{$_} if $s;
+                }
 
                 if ($v eq "</c>") {
                     $v = "";
@@ -126,7 +164,7 @@ sub _load_workbook {
                 my $type      = "Text";
                 my $thisstyle = "";
 
-                if (not($s) && not($s2)) {
+                if (not($s) && not($s2) && not($inline)) {
                     $type = "Numeric";
 
                     if (defined $sty && defined $shared_info->{styles}->[$sty]) {
@@ -153,8 +191,7 @@ sub _load_workbook {
                     Type   => $type
                 );
 
-                if ($s && exists $shared_info->{phonetics}->{$_}) {
-                    my $phonetics = $shared_info->{phonetics}->{$_};
+                if ($phonetics) {
                     $cell->{RPh} = [map { { %$_ } } @{$phonetics->{RPh}}]
                         if exists $phonetics->{RPh};
                     $cell->{PhoneticPr} = { %{$phonetics->{PhoneticPr}} }
@@ -214,29 +251,37 @@ sub __load_shared_strings {
         my $mstr = __xml_contents($member_shared_strings);
         $mstr =~ s/<t\/>/<t><\/t>/gsm;    # this handles an empty t tag in the xml <t/>
         foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
-            my %metadata;
-            my @runs;
-            foreach my $run ($si =~ /(<rPh\b[^>]*>.*?<\/rPh\s*>)/gs) {
-                my ($attributes, $text) = $run =~ /<rPh\b([^>]*)>(.*?)<\/rPh\s*>/s;
-                push @runs, {
-                    %{__phonetic_attributes($attributes, qw(sb eb))},
-                    Val => __shared_string_text($text, $converter),
-                };
-            }
-            $metadata{RPh} = \@runs if @runs;
-            if ($si =~ /<phoneticPr\b([^>]*)>/s) {
-                $metadata{PhoneticPr} = __phonetic_attributes($1, qw(fontId type alignment));
-            }
-            # Phonetic runs contain their own t elements, not display text.
-            $si =~ s{<rPh\b[^>]*/>|<rPh\b[^>]*>.*?</rPh\s*>}{}gs;
-            $phonetics->{scalar @shared_strings} = \%metadata if keys %metadata;
-            push @shared_strings, __shared_string_text($si, $converter);
+            my ($text, $metadata) = __parse_string($si, $converter);
+            $phonetics->{scalar @shared_strings} = $metadata if keys %$metadata;
+            push @shared_strings, $text;
         }
     }
 
     return \@shared_strings;
 }
 
+
+# Shared strings (si) and inline strings (is) have the same text structure.
+sub __parse_string {
+    my ($xml, $converter) = @_;
+    my %metadata;
+    my @runs;
+    foreach my $run ($xml =~ /(<rPh\b[^>]*>.*?<\/rPh\s*>)/gs) {
+        my ($attributes, $text) = $run =~ /<rPh\b([^>]*)>(.*?)<\/rPh\s*>/s;
+        push @runs, {
+            %{__phonetic_attributes($attributes, qw(sb eb))},
+            Val => __shared_string_text($text, $converter),
+        };
+    }
+    $metadata{RPh} = \@runs if @runs;
+    if ($xml =~ /<phoneticPr\b([^>]*)>/s) {
+        $metadata{PhoneticPr} = __phonetic_attributes($1, qw(fontId type alignment));
+    }
+    # Phonetic runs contain their own t elements, not display text.
+    $xml =~ s{<rPh\b[^>]*/>|<rPh\b[^>]*>.*?</rPh\s*>}{}gs;
+    $xml =~ s{<t\b[^>]*/>}{<t></t>}gs;
+    return (__shared_string_text($xml, $converter), \%metadata);
+}
 
 sub __shared_string_text {
     my ($xml, $converter) = @_;
@@ -365,7 +410,7 @@ sub __xml_contents {
     my $xml = __member_contents($member);
     my $name = __diagnostic_text($member->fileName());
     my %data_elements = map { $_ => 1 } qw(
-        workbook sheets sheet worksheet sheetData row c v f
+        workbook sheets sheet worksheet sheetData row c v f is
         sst si r t rPh phoneticPr styleSheet numFmts numFmt cellStyleXfs cellXfs xf
         Relationships Relationship
     );
@@ -485,10 +530,18 @@ Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks,
 but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability;
 including Workbook, Worksheet, and Cell.
 
+=head1 STRING CELLS
+
+Both shared strings (C<t="s">) and inline strings (C<t="inlineStr">)
+are supported. Inline text is read from the cell's C<is> element without
+requiring a shared-string table or a C<v> element. Rich-text runs are
+concatenated in order, whitespace is preserved, and the optional converter
+is applied to each text fragment for both string representations.
+
 =head1 PHONETIC HINTS
 
-Phonetic hints in shared strings are not included in C<value()> or
-C<unformatted()>. Cells referencing such strings expose the hints as
+Phonetic hints in shared strings and inline strings are not included in C<value()> or
+C<unformatted()>. Cells containing such strings expose the hints as
 C<$cell-E<gt>{RPh}>, an array of hashes with C<Val>, C<Sb> (start offset)
 and C<Eb> (end offset). The optional converter is applied to hint text as
 well as ordinary cell text; offsets retain their original XLSX values.

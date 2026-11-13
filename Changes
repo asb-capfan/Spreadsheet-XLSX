@@ -2,6 +2,10 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Support inlineStr cells (RT #117462, #83399), including rich text,
+      whitespace, empty strings, converters and separate phonetic metadata.
+      Share text extraction with shared strings; add regression tests.
+
     - Fix AM/PM and A/P time formatting, including uppercase tokens, noon
       and midnight (RT #119170). Preserve raw date/time values and types.
     - Ignore the x15:workbookPr extension instead of rejecting it as a
