@@ -158,7 +158,7 @@ sub _load_workbook {
                     $phonetics = $shared_info->{phonetics}->{$_} if $s;
                 }
 
-                if ($v eq "</c>") {
+                if (defined($v) && $v eq "</c>") {
                     $v = "";
                 }
                 my $type      = "Text";
@@ -184,7 +184,7 @@ sub _load_workbook {
                 $sheet->{MinRow} = $row if $sheet->{MinRow} > $row;
                 $sheet->{MinCol} = $col if $sheet->{MinCol} > $col;
 
-                if ($v =~ /(.*)E\-(.*)/gsm && $type eq "Numeric") {
+                if ($type eq "Numeric" && defined($v) && $v =~ /(.*)E\-(.*)/gsm) {
                     $v = $1 / (10**$2);    # this handles scientific notation for very small numbers
                 }
 

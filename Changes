@@ -2,6 +2,10 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Avoid uninitialized-value warnings for undefined shared-string cell
+      values during parsing and formatting (RT #114521). Preserve raw undef
+      values and add regression tests.
+
     - Fix short and long weekday formatting and recognize standalone date
       and AM/PM formats as date/time cells (RT #117007). Ignore quoted and
       escaped literals during date-type detection; add regression tests.
