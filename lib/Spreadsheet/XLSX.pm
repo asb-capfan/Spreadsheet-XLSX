@@ -46,7 +46,7 @@ sub _load_workbook {
     $self->{SheetCount} = 0;
     $self->{FmtClass}   = Spreadsheet::XLSX::Fmt2007->new;
     $self->{Flg1904}    = 0;
-    my $workbook_xml = __member_contents($member_workbook);
+    my $workbook_xml = __xml_contents($member_workbook);
     if ($workbook_xml =~ /date1904="1"/) {
         $self->{Flg1904} = 1;
     }
@@ -100,12 +100,13 @@ sub _load_workbook {
         my $s    = 0;
         my $s2   = 0;
         my $sty  = 0;
-        my $sheet_xml = __member_contents($member_sheet);
+        my $sheet_xml = __xml_contents($member_sheet);
         foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/gs) {
             if (/^<c(?:\s|\/?>)/) {
 
                 my ($reference) = /\sr="([^"]*)"/;
-                ($row, $col) = __decode_cell_name($reference);
+                ($row, $col) = __decode_cell_name($reference,
+                    "worksheet '" . __diagnostic_text($sheet->{Name}) . "' (" . $member_sheet->fileName() . ")");
 
                 $s   = m/t=\"s\"/      ? 1  : 0;
                 $s2  = m/t=\"str\"/    ? 1  : 0;
@@ -174,16 +175,18 @@ sub _load_workbook {
 # XLSX worksheets have at most 1,048,576 rows and 16,384 columns (XFD).
 
 sub __decode_cell_name {
-    my ($reference) = @_;
-    die "Invalid XLSX cell reference\n"
+    my ($reference, $context) = @_;
+    my $details = defined($reference) ? "'" . __diagnostic_text($reference) . "'" : '(missing r attribute)';
+    $details .= " in $context" if defined $context;
+    die "Invalid XLSX cell reference $details; expected an A1-style address from A1 to XFD1048576, not a defined name\n"
         unless defined($reference)
         && $reference =~ /\A([A-Z]{1,3})([1-9][0-9]{0,6})\z/;
     my ($letters, $digits) = ($1, $2);
-    die "XLSX cell row exceeds worksheet limit\n" if $digits > 1048576;
+    die "XLSX cell row exceeds worksheet limit: $details; maximum row is 1048576\n" if $digits > 1048576;
 
     my $col = 0;
     $col = $col * 26 + ord($_) - ord('A') + 1 for split //, $letters;
-    die "XLSX cell column exceeds worksheet limit\n" if $col > 16384;
+    die "XLSX cell column exceeds worksheet limit: $details; maximum column is XFD\n" if $col > 16384;
 
     return ($digits - 1, $col - 1);
 }
@@ -198,7 +201,7 @@ sub __load_shared_strings {
 
     if ($member_shared_strings) {
 
-        my $mstr = __member_contents($member_shared_strings);
+        my $mstr = __xml_contents($member_shared_strings);
         $mstr =~ s/<t\/>/<t><\/t>/gsm;    # this handles an empty t tag in the xml <t/>
         foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
             my $str;
@@ -224,7 +227,7 @@ sub __load_styles {
 
     if ($member_styles) {
         my $formatter = Spreadsheet::XLSX::Fmt2007->new();
-        my $styles_xml = __member_contents($member_styles);
+        my $styles_xml = __xml_contents($member_styles);
 
         # IDs from both format declarations and style references are data,
         # never regular-expression syntax.
@@ -265,7 +268,7 @@ sub __load_rels {
 
     my %rels = ();
 
-    my $rels_xml = __member_contents($member_rels);
+    my $rels_xml = __xml_contents($member_rels);
     foreach ($rels_xml =~ /\<Relationship (.*?)\/?\>/g) {
 
         my ($id, $target);
@@ -303,6 +306,60 @@ sub __load_zip {
     }
 
     return $zip;
+}
+
+sub __diagnostic_text {
+    my ($text) = @_;
+    $text = '' unless defined $text;
+    $text = substr($text, 0, 80) . '...' if length($text) > 80;
+    $text =~ s/[\x00-\x1f\x7f]/?/g;
+    return $text;
+}
+
+# Recognize only the markup needed for diagnostics. This is deliberately not
+# a validating XML parser: it does not check nesting, entities or namespaces.
+sub __xml_contents {
+    my ($member) = @_;
+    my $xml = __member_contents($member);
+    my $name = __diagnostic_text($member->fileName());
+    my %data_elements = map { $_ => 1 } qw(
+        workbook workbookPr sheets sheet worksheet sheetData row c v f
+        sst si r t styleSheet numFmts numFmt cellStyleXfs cellXfs xf
+        Relationships Relationship
+    );
+    pos($xml) = 0;
+    while (pos($xml) < length($xml)) {
+        next if $xml =~ /\G[^<]+/gc;
+        my $offset = pos($xml);
+        if (substr($xml, $offset, 4) eq '<!--') {
+            next if $xml =~ /\G<!--.*?-->/gcs;
+            die "Cannot parse XLSX XML member '$name': unterminated XML comment at byte $offset\n";
+        }
+        if (substr($xml, $offset, 9) eq '<![CDATA[') {
+            next if $xml =~ /\G<!\[CDATA\[.*?\]\]>/gcs;
+            die "Cannot parse XLSX XML member '$name': unterminated CDATA section at byte $offset\n";
+        }
+        if (substr($xml, $offset, 2) eq '<?') {
+            next if $xml =~ /\G<\?.*?\?>/gcs;
+            die "Cannot parse XLSX XML member '$name': unterminated processing instruction at byte $offset\n";
+        }
+        die "Cannot parse XLSX XML member '$name': DOCTYPE declarations are not supported\n"
+            if $xml =~ /\G<!DOCTYPE\b/gc;
+        $xml =~ /\G(<(?:[^<>"']|"[^"<]*"|'[^'<]*')*>)/gcs
+            or die "Cannot parse XLSX XML member '$name': unterminated or malformed XML tag at byte $offset\n";
+        my $tag = $1;
+        my ($closing, $element, $attributes) = $tag =~ /\A<(\/?)([A-Za-z_][A-Za-z0-9_.:-]*)(.*?)>\z/s;
+        die "Cannot parse XLSX XML member '$name': malformed XML tag at byte $offset\n"
+            unless defined $element;
+        my $valid = $closing ? $attributes =~ /\A\s*\z/
+            : $attributes =~ /\A(?:\s+[A-Za-z_][A-Za-z0-9_.:-]*\s*=\s*(?:"[^"<]*"|'[^'<]*'))*\s*\/?\z/s;
+        die "Cannot parse XLSX XML member '$name': malformed attributes in element '$element' at byte $offset\n"
+            unless $valid;
+        die "Unsupported namespace-prefixed element '" . __diagnostic_text($element)
+            . "' in XLSX XML member '$name'. Prefixes can be valid XLSX, but are not supported by Spreadsheet::XLSX. Use Spreadsheet::ParseXLSX for namespace-prefixed files.\n"
+            if $element =~ /:([^:]+)\z/ && $data_elements{$1};
+    }
+    return $xml;
 }
 
 # readChunk() limits compressed input, not inflated output. Small input chunks
@@ -401,6 +458,32 @@ This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for
 Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks, 
 but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability; 
 including Workbook, Worksheet, and Cell.
+
+=head1 LIMITATIONS AND PARSE ERRORS
+
+The module uses regular expressions to extract workbook data. It does
+B<not> perform full XML validation or XLSX schema validation. Some obvious
+syntax errors, such as malformed attributes or unterminated tags, comments
+and CDATA sections, cause an exception naming the XML member and byte
+position. Other malformed XML (for example, incorrectly nested elements
+or invalid entity references) may not be detected. DTD declarations are
+not supported. No external entities are loaded or expanded.
+
+Unprefixed elements, including elements in the default SpreadsheetML
+namespace, are supported. Explicit prefixes on recognized data elements, such as
+C<x:worksheet> or C<p:Relationship>, cause an exception naming the element
+and XML member. Such prefixes can be valid XLSX syntax; this is a limitation
+of Spreadsheet::XLSX, not evidence that the file is invalid. Other extension elements continue to be ignored.
+Namespace declarations and attributes such as C<r:id> remain supported.
+Prefix declarations are not resolved or validated; recognition is based
+on the local element names used by this parser. Use L<Spreadsheet::ParseXLSX> for valid XLSX files
+using explicit element prefixes or when proper XML parsing is required.
+
+Cell positions must use A1-style addresses within C<A1:XFD1048576>.
+Defined names such as C<Artikelnummer1> cannot replace an address in a
+cell's C<r> attribute. Missing or invalid addresses cause an exception
+identifying the worksheet and XML member. The parser does not attempt to
+repair malformed XML or infer positions from invalid addresses.
 
 =head1 SEE ALSO
 

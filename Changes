@@ -2,6 +2,12 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Report obvious XML syntax errors and unsupported prefixed elements
+      with the XML member name; recommend Spreadsheet::ParseXLSX for prefixed
+      files (RT #124409). Document that XML is not fully validated.
+    - Include worksheet, XML member and invalid address in cell-reference
+      errors. No new XML parser dependency is required.
+
     - Preserve custom number formats referenced by multiple cell styles
       (RT #132420). Add regression tests for repeated format IDs.
 
