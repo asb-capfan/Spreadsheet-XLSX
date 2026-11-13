@@ -17,6 +17,7 @@ t/3_____invalid_formular.xlsx
 t/empty_v_tag.t
 t/empty_v_tag.xlsx
 t/value_tags.t
+t/phonetic_strings.t
 t/xml_diagnostics.t
 t/formats.t
 t/format_conditions.t

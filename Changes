@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Keep phonetic hints out of shared-string cell values (RT #122340).
+      Expose hints and their properties separately as RPh and PhoneticPr.
+
     - Report obvious XML syntax errors and unsupported prefixed elements
       with the XML member name; recommend Spreadsheet::ParseXLSX for prefixed
       files (RT #124409). Document that XML is not fully validated.

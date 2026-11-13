@@ -28,7 +28,8 @@ sub new {
 
     my $zip                     = __load_zip($filename);
 
-    $shared_info{shared_strings}= __load_shared_strings($zip, $shared_info{converter});
+    $shared_info{phonetics} = {};
+    $shared_info{shared_strings}= __load_shared_strings($zip, $shared_info{converter}, $shared_info{phonetics});
     my ($styles, $style_info)   = __load_styles($zip);
     $shared_info{styles}        = $styles;
     $shared_info{style_info}    = $style_info;
@@ -152,6 +153,14 @@ sub _load_workbook {
                     Type   => $type
                 );
 
+                if ($s && exists $shared_info->{phonetics}->{$_}) {
+                    my $phonetics = $shared_info->{phonetics}->{$_};
+                    $cell->{RPh} = [map { { %$_ } } @{$phonetics->{RPh}}]
+                        if exists $phonetics->{RPh};
+                    $cell->{PhoneticPr} = { %{$phonetics->{PhoneticPr}} }
+                        if exists $phonetics->{PhoneticPr};
+                }
+
                 $cell->{_Value} = $self->{FmtClass}->ValFmt($cell, $self);
                 if ($type eq "Date") {
                     if ($v < 1) {    #then this is Excel time field
@@ -193,7 +202,8 @@ sub __decode_cell_name {
 
 
 sub __load_shared_strings {
-    my ($zip, $converter) = @_;
+    my ($zip, $converter, $phonetics) = @_;
+    $phonetics = {} unless defined $phonetics;
 
     my $member_shared_strings = $zip->memberNamed('xl/sharedStrings.xml');
 
@@ -204,18 +214,50 @@ sub __load_shared_strings {
         my $mstr = __xml_contents($member_shared_strings);
         $mstr =~ s/<t\/>/<t><\/t>/gsm;    # this handles an empty t tag in the xml <t/>
         foreach my $si ($mstr =~ /<si.*?>(.*?)<\/si/gsm) {
-            my $str;
-            foreach my $t ($si =~ /<t.*?>(.*?)<\/t/gsm) {
-                $t = $converter->convert($t) if defined $converter;
-                $str .= $t;
+            my %metadata;
+            my @runs;
+            foreach my $run ($si =~ /(<rPh\b[^>]*>.*?<\/rPh\s*>)/gs) {
+                my ($attributes, $text) = $run =~ /<rPh\b([^>]*)>(.*?)<\/rPh\s*>/s;
+                push @runs, {
+                    %{__phonetic_attributes($attributes, qw(sb eb))},
+                    Val => __shared_string_text($text, $converter),
+                };
             }
-            push @shared_strings, $str;
+            $metadata{RPh} = \@runs if @runs;
+            if ($si =~ /<phoneticPr\b([^>]*)>/s) {
+                $metadata{PhoneticPr} = __phonetic_attributes($1, qw(fontId type alignment));
+            }
+            # Phonetic runs contain their own t elements, not display text.
+            $si =~ s{<rPh\b[^>]*/>|<rPh\b[^>]*>.*?</rPh\s*>}{}gs;
+            $phonetics->{scalar @shared_strings} = \%metadata if keys %metadata;
+            push @shared_strings, __shared_string_text($si, $converter);
         }
     }
 
     return \@shared_strings;
 }
 
+
+sub __shared_string_text {
+    my ($xml, $converter) = @_;
+    my $str = '';
+    foreach my $text ($xml =~ /<t\b[^>]*>(.*?)<\/t\s*>/gs) {
+        $text = $converter->convert($text) if defined $converter;
+        $str .= $text;
+    }
+    return $str;
+}
+
+sub __phonetic_attributes {
+    my ($xml, @fields) = @_;
+    my %wanted = map { $_ => 1 } @fields;
+    my %attributes;
+    while ($xml =~ /([A-Za-z][A-Za-z0-9]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g) {
+        my ($key, $value) = ($1, defined($2) ? $2 : $3);
+        $attributes{ucfirst($key)} = $value if $wanted{$key};
+    }
+    return \%attributes;
+}
 
 sub __load_styles {
     my ($zip) = @_;
@@ -324,7 +366,7 @@ sub __xml_contents {
     my $name = __diagnostic_text($member->fileName());
     my %data_elements = map { $_ => 1 } qw(
         workbook workbookPr sheets sheet worksheet sheetData row c v f
-        sst si r t styleSheet numFmts numFmt cellStyleXfs cellXfs xf
+        sst si r t rPh phoneticPr styleSheet numFmts numFmt cellStyleXfs cellXfs xf
         Relationships Relationship
     );
     pos($xml) = 0;
@@ -442,6 +484,17 @@ This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for
 Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks,
 but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability;
 including Workbook, Worksheet, and Cell.
+
+=head1 PHONETIC HINTS
+
+Phonetic hints in shared strings are not included in C<value()> or
+C<unformatted()>. Cells referencing such strings expose the hints as
+C<$cell-E<gt>{RPh}>, an array of hashes with C<Val>, C<Sb> (start offset)
+and C<Eb> (end offset). The optional converter is applied to hint text as
+well as ordinary cell text; offsets retain their original XLSX values.
+
+If present, C<$cell-E<gt>{PhoneticPr}> contains C<FontId> and the optional
+C<Type> and C<Alignment> properties. Metadata is copied for each cell.
 
 =head1 LIMITATIONS AND PARSE ERRORS
 

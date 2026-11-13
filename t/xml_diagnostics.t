@@ -99,6 +99,13 @@ for my $case (
         $case->[1], qr/byte \d+/);
 }
 
+for my $element ('rPh', 'phoneticPr') {
+    rejection('xl/sharedStrings.xml',
+        qq{<sst><si><t>text</t><x:$element xmlns:x="$main"/></si></sst>},
+        qr/Unsupported namespace-prefixed element 'x:$element'/,
+        qr/Use Spreadsheet::ParseXLSX/);
+}
+
 my $with_extension = $base{'xl/worksheets/sheet1.xml'};
 $with_extension =~ s{</worksheet>}{<!-- <x:c r="bad"/> --><ext:ignored xmlns:ext="urn:extension"><![CDATA[<x:v>]]></ext:ignored></worksheet>};
 is(parse_members('xl/worksheets/sheet1.xml' => $with_extension)->worksheet(0)->get_cell(0, 0)->value(),
