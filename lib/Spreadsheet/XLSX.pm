@@ -359,7 +359,7 @@ sub __load_rels {
     my %rels = ();
 
     my $rels_xml = __xml_contents($member_rels);
-    foreach ($rels_xml =~ /\<Relationship (.*?)\/?\>/g) {
+    foreach ($rels_xml =~ /\<Relationship\s+(.*?)\/?\>/gs) {
 
         my ($id, $target);
         ($id) = /Id="(.*?)"/;

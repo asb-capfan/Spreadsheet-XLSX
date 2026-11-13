@@ -28,6 +28,7 @@ t/date_time_values.t
 t/date_time_values.xlsx
 t/weekday_formats.t
 t/undefined_values.t
+t/relationship_whitespace.t
 t/number_format_ids.t
 t/zip_limits.t
 t/formats.xlsx

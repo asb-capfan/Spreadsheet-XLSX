@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Handle line breaks and other XML whitespace in Relationship tags
+      (RT #111087). Add regression tests for LF, CRLF and attribute order.
+
     - Avoid uninitialized-value warnings for undefined shared-string cell
       values during parsing and formatting (RT #114521). Preserve raw undef
       values and add regression tests.
