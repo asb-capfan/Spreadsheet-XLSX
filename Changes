@@ -2,6 +2,11 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Fix AM/PM and A/P time formatting, including uppercase tokens, noon
+      and midnight (RT #119170). Preserve raw date/time values and types.
+    - Ignore the x15:workbookPr extension instead of rejecting it as a
+      prefixed data element. Add the original RT #119170 workbook as a test.
+
     - Keep phonetic hints out of shared-string cell values (RT #122340).
       Expose hints and their properties separately as RPh and PhoneticPr.
 

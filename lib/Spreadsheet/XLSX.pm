@@ -365,7 +365,7 @@ sub __xml_contents {
     my $xml = __member_contents($member);
     my $name = __diagnostic_text($member->fileName());
     my %data_elements = map { $_ => 1 } qw(
-        workbook workbookPr sheets sheet worksheet sheetData row c v f
+        workbook sheets sheet worksheet sheetData row c v f
         sst si r t rPh phoneticPr styleSheet numFmts numFmt cellStyleXfs cellXfs xf
         Relationships Relationship
     );

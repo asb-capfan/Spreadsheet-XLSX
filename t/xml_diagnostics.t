@@ -106,6 +106,11 @@ for my $element ('rPh', 'phoneticPr') {
         qr/Use Spreadsheet::ParseXLSX/);
 }
 
+my $workbook_extension = $base{'xl/workbook.xml'};
+$workbook_extension =~ s{</workbook>}{<extLst><ext><x15:workbookPr xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main" chartTrackingRefBase="1"/></ext></extLst></workbook>};
+is(parse_members('xl/workbook.xml' => $workbook_extension)->worksheet(0)->get_cell(0, 0)->value(),
+    42, 'x15:workbookPr extension is ignored (RT #119170)');
+
 my $with_extension = $base{'xl/worksheets/sheet1.xml'};
 $with_extension =~ s{</worksheet>}{<!-- <x:c r="bad"/> --><ext:ignored xmlns:ext="urn:extension"><![CDATA[<x:v>]]></ext:ignored></worksheet>};
 is(parse_members('xl/worksheets/sheet1.xml' => $with_extension)->worksheet(0)->get_cell(0, 0)->value(),

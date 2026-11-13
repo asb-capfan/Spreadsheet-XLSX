@@ -23,6 +23,8 @@ t/formats.t
 t/format_conditions.t
 t/cell_references.t
 t/date_limits.t
+t/date_time_values.t
+t/date_time_values.xlsx
 t/number_format_ids.t
 t/zip_limits.t
 t/formats.xlsx
