@@ -73,7 +73,9 @@ sub _load_workbook {
                 $sheet->{Name} = $shared_info->{converter}->convert($sheet->{Name}) if defined $shared_info->{converter};
             } elsif ($k eq 'r:id') {
 
-                $sheet->{path} = $shared_info->{rels}->{$v};
+                $sheet->{_RelationshipId} = $v;
+                my $relation = $shared_info->{rels}->{$v};
+                $sheet->{path} = $relation->{Target} if $relation;
 
             }
 
@@ -88,7 +90,21 @@ sub _load_workbook {
 
     foreach my $sheet (@{$self->{Worksheet}}) {
 
-        my $member_sheet = $zip->memberNamed("xl/$sheet->{path}") or next;
+        my $id = $sheet->{_RelationshipId};
+        my $context = "worksheet '" . __diagnostic_text($sheet->{Name})
+            . "', relationship '" . __diagnostic_text($id) . "'";
+        my $relation = defined($id) ? $shared_info->{rels}->{$id} : undef;
+        die "Missing XLSX relationship for $context in xl/_rels/workbook.xml.rels\n"
+            unless $relation;
+        die "External XLSX target '" . __diagnostic_text($relation->{Target})
+            . "' is not supported for $context\n"
+            if defined($relation->{TargetMode}) && $relation->{TargetMode} eq 'External';
+        # Keep the chartsheet placeholder without interpreting chart XML as cells.
+        next if defined($relation->{Type}) && $relation->{Type} =~ m{/chartsheet\z};
+        my $part = __resolve_part_target('xl/workbook.xml', $relation->{Target}, $context);
+        my $member_sheet = $zip->memberNamed($part)
+            or die "XLSX target '" . __diagnostic_text($relation->{Target})
+                . "' for $context resolves to missing ZIP member '$part'\n";
 
         my ($row, $col);
 
@@ -357,17 +373,35 @@ sub __load_rels {
     my $rels_xml = __xml_contents($member_rels);
     foreach ($rels_xml =~ /\<Relationship\s+(.*?)\/?\>/gs) {
 
-        my ($id, $target);
-        ($id) = /Id="(.*?)"/;
-        ($target) = /Target="(.*?)"/;
- 
-	    if (defined $id and defined $target) {	
-    		$rels{$id} = $target;
+        my %attributes = /\b(Id|Target|TargetMode|Type)="([^"]*)"/g;
+	    if (defined $attributes{Id}) {
+            $rels{$attributes{Id}} = \%attributes;
         }
 
     }
 
     return \%rels;
+}
+
+sub __resolve_part_target {
+    my ($source, $target, $context) = @_;
+    my $shown = defined($target) ? "'" . __diagnostic_text($target) . "'" : '(missing Target attribute)';
+    die "Invalid XLSX package target $shown for $context\n"
+        unless defined($target) && length($target)
+            && $target !~ m{\A(?:[A-Za-z][A-Za-z0-9+.-]*:|//)|[\\?#]};
+    $source =~ s{[^/]*\z}{};
+    my @parts = $target =~ m{\A/} ? () : grep { length } split '/', $source;
+    for my $segment (split '/', $target) {
+        next if $segment eq '' || $segment eq '.';
+        if ($segment eq '..') {
+            die "XLSX package target $shown for $context escapes the package root\n" unless @parts;
+            pop @parts;
+        } else {
+            push @parts, $segment;
+        }
+    }
+    die "Invalid XLSX package target $shown for $context: no ZIP member path\n" unless @parts;
+    return join '/', @parts;
 }
 
 sub __load_zip {
@@ -549,6 +583,14 @@ If present, C<$cell-E<gt>{PhoneticPr}> contains C<FontId> and the optional
 C<Type> and C<Alignment> properties. Metadata is copied for each cell.
 
 =head1 LIMITATIONS AND PARSE ERRORS
+
+Worksheet relationship targets are resolved relative to C<xl/workbook.xml>,
+or from the ZIP package root when they begin with C</>. Dot segments are
+normalized. Missing relationships, missing target members, paths escaping
+the package root, and external worksheet targets cause an exception naming
+the worksheet and relationship. External resources are never fetched.
+Chartsheets remain empty worksheet placeholders; their chart data is not
+interpreted as cell data.
 
 ZIP input is limited to 10,000 entries, 64 MiB per uncompressed member, and
 256 MiB of total declared uncompressed data, including unused members.

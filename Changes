@@ -2,6 +2,11 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Resolve absolute and relative worksheet relationship targets and
+      normalize dot segments (RT #86667). Report missing targets with sheet
+      and relationship details; reject external targets and root traversal.
+      Preserve chartsheet placeholders and add regression tests.
+
     - Replace legacy match and postmatch variables with local captures and
       match lengths (RT #70879), without raising the minimum Perl version.
 
