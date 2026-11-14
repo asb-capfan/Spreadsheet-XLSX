@@ -184,9 +184,11 @@ sub ExcelFmt {
           ) {
             $iFmtMode = 1 unless ($iFmtMode);
             if (substr($sFmtObj, $i, 1) =~ /[#0]/) {
-                if (substr($sFmtObj, $i) =~ /^([#0]+)([\.]?)([0#]*)([eE])([\+\-])([0#]+)/) {
-                    push @aRep, [substr($sFmtObj, $i, length($&)), $i, length($&)];
-                    $i += length($&);
+                my ($number_format) = substr($sFmtObj, $i) =~ /^([#0]+[.]?[0#]*[eE][+-][0#]+)/;
+                if (defined $number_format) {
+                    my $match_length = length($number_format);
+                    push @aRep, [$number_format, $i, $match_length];
+                    $i += $match_length;
                 } else {
                     if ($iFflg == -1) {
                         $iFflg = $i;
@@ -216,9 +218,11 @@ sub ExcelFmt {
                 push @aRep, [substr($sFmtObj, $iFflg, $i - $iFflg + 1), length($sFmtRes), $i - $iFflg + 1];
                 $iFflg = -1;
             } elsif (substr($sFmtObj, $i, 3) =~ /^[eE][\+\-][0#]$/) {
-                if (substr($sFmtObj, $i) =~ /([eE])([\+\-])([0#]+)/) {
-                    push @aRep, [substr($sFmtObj, $i, length($&)), $i, length($&)];
-                    $i += length($&);
+                my ($exponent_format) = substr($sFmtObj, $i) =~ /([eE][+-][0#]+)/;
+                if (defined $exponent_format) {
+                    my $match_length = length($exponent_format);
+                    push @aRep, [$exponent_format, $i, $match_length];
+                    $i += $match_length;
                 }
                 $iFflg = -1;
             } else {
@@ -416,11 +420,11 @@ sub ExcelFmt {
                 $sRep = $periods[$aTime[2] >= 12 ? 1 : 0];
             } elsif ($rItem->[0] eq '.') {
                 $sRep = '.';
-            } elsif ($rItem->[0] =~ /^0+$/) {
-                my $i0Len = length($&);
+            } elsif ($rItem->[0] =~ /^(0+)$/) {
+                my $fraction_digits = length($1);
 
                 #print "SEC:", $aTime[7], "\n";
-                $sRep = substr(sprintf("%.${i0Len}f", $aTime[7] / 1000.0), 2, $i0Len);
+                $sRep = substr(sprintf("%.${fraction_digits}f", $aTime[7] / 1000.0), 2, $fraction_digits);
             } elsif ($rItem->[0] eq '[h]') {
                 $sRep = sprintf('%d', int($iData) * 24 + $aTime[2]);
             } elsif ($rItem->[0] eq '[mm]') {

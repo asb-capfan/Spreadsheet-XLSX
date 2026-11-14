@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Replace legacy match and postmatch variables with local captures and
+      match lengths (RT #70879), without raising the minimum Perl version.
+
     - Preserve token boundaries around escaped and quoted literals when
       detecting date formats (RT #87746). Add the original workbook and
       regression tests for date types, raw values and formatted output.

@@ -54,13 +54,8 @@ sub _load_workbook {
 
     foreach ($workbook_xml =~ /\<(.*?)\/?\>/g) {
 
-        /^(\w+)\s+/;
-
-        my ($tag, $other) = ($1, $');
-
-        my @pairs = split /\" /, $other;
-
-        $tag eq 'sheet' or next;
+        my ($tag, $attributes) = /^(\w+)\s+(.*)$/s;
+        next unless defined($tag) && $tag eq 'sheet';
 
         my $sheet = {
             MaxRow => 0,
@@ -69,7 +64,7 @@ sub _load_workbook {
             MinCol => 1000000,
         };
 
-        foreach ($other =~ /(\S+=".*?")/gsm) {
+        foreach ($attributes =~ /(\S+=".*?")/gsm) {
 
             my ($k, $v) = split /=?"/;    #"
 
