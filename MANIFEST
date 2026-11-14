@@ -33,6 +33,8 @@ t/undefined_values.t
 t/relationship_whitespace.t
 t/relationship_targets.t
 t/decimal_formats.t
+t/xml_entities.t
+t/xml_entities.xlsx
 t/number_format_ids.t
 t/zip_limits.t
 t/formats.xlsx

@@ -2,6 +2,11 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Decode predefined XML entities and numeric character references once
+      in shared and inline strings, including rich text and phonetic hints
+      (RT #93962). Decode before the optional converter, preserve literal
+      entity text and add the original workbook as a regression fixture.
+
     - Resolve built-in number formats and apply row/column default styles
       when a cell has no explicit style (RT #101636). Cell styles override
       row styles, which override column defaults; preserve raw values.

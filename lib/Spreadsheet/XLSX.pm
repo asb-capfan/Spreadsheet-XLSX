@@ -334,10 +334,45 @@ sub __shared_string_text {
     my ($xml, $converter) = @_;
     my $str = '';
     foreach my $text ($xml =~ /<t\b[^>]*>(.*?)<\/t\s*>/gs) {
+        # Decode each XML fragment exactly once, before character conversion.
+        # Decoding after concatenation would also reinterpret literal entities
+        # assembled across rich-text runs.
+        $text =~ s/&((?:amp|lt|gt|quot|apos)|\#[0-9]+|\#x[0-9A-Fa-f]+);/__xml_entity($1)/ge;
         $text = $converter->convert($text) if defined $converter;
         $str .= $text;
     }
     return $str;
+}
+
+sub __xml_entity {
+    my ($entity) = @_;
+    return '&' if $entity eq 'amp';
+    return '<' if $entity eq 'lt';
+    return '>' if $entity eq 'gt';
+    return '"' if $entity eq 'quot';
+    return "'" if $entity eq 'apos';
+
+    my $digits = substr($entity, 1);
+    my $hex = $digits =~ s/\Ax//;
+    $digits =~ s/\A0+//;
+    $digits = '0' unless length $digits;
+    my $error = "Invalid XML character reference '&" . __diagnostic_text($entity) . ";' in XLSX string\n";
+    die $error if length($digits) > ($hex ? 6 : 7);
+    my $code = $hex ? hex($digits) : 0 + $digits;
+    die $error unless $code == 9 || $code == 10 || $code == 13
+        || ($code >= 0x20 && $code <= 0xd7ff)
+        || ($code >= 0xe000 && $code <= 0xfffd)
+        || ($code >= 0x10000 && $code <= 0x10ffff);
+
+    # ZIP XML and the optional converter use UTF-8 bytes, not Perl characters.
+    # Keep numeric references consistent with literal UTF-8 text, without
+    # adding an encoding-library dependency or changing the minimum Perl.
+    return pack('C', $code) if $code < 0x80;
+    return pack('C*', 0xc0 | ($code >> 6), 0x80 | ($code & 0x3f)) if $code < 0x800;
+    return pack('C*', 0xe0 | ($code >> 12), 0x80 | (($code >> 6) & 0x3f),
+        0x80 | ($code & 0x3f)) if $code < 0x10000;
+    return pack('C*', 0xf0 | ($code >> 18), 0x80 | (($code >> 12) & 0x3f),
+        0x80 | (($code >> 6) & 0x3f), 0x80 | ($code & 0x3f));
 }
 
 sub __phonetic_attributes {
@@ -610,6 +645,14 @@ are supported. Inline text is read from the cell's C<is> element without
 requiring a shared-string table or a C<v> element. Rich-text runs are
 concatenated in order, whitespace is preserved, and the optional converter
 is applied to each text fragment for both string representations.
+
+The five predefined XML entities (C<&amp;>, C<&lt;>, C<&gt;>, C<&quot;>,
+C<&apos;>) and decimal or hexadecimal character references are decoded
+once per text fragment before the converter runs. Numeric references use
+the same UTF-8 byte representation as literal text when no converter is
+supplied. For example, C<&amp;lt;> becomes the literal text C<&lt;>, not
+another decoded character. Invalid numeric XML character references cause
+an exception. The same decoding applies to phonetic hint text.
 
 =head1 PHONETIC HINTS
 
