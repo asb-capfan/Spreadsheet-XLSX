@@ -171,7 +171,8 @@ sub _load_workbook {
                         $thisstyle = $shared_info->{style_info}->{$shared_info->{styles}->[$sty]};
                         # Literal text and escaped characters are not date tokens.
                         my $date_format = Spreadsheet::XLSX::Utility2007::unescape_HTML($thisstyle);
-                        $date_format =~ s/"[^"]*"|\\.|_.|\*.//g;
+                        # Keep token boundaries when removing literal separators.
+                        $date_format =~ s/"[^"]*"|\\.|_.|\*./ /g;
                         if ($date_format =~ /\b(?:m{1,5}|d{1,4}|y{2,4}|h{1,2}|s{1,2}|(?i:am\/pm|a\/p))\b/) {
                             $type = "Date";
                         }

@@ -59,6 +59,8 @@ my @cases = (
     ['A/P', '0.75', 'P', 'Text'],
     ['am/pm', '0.25', 'am', 'Text'],
     ['yyyy', '42598', '2016', 'Date'],
+    ['[$-409]dd\\-mmm\\-yy;@', '41510', '24-Aug-13', 'Date'],
+    ['dd"-"mmm"-"yy', '41511', '25-Aug-13', 'Date'],
     ['"AM/PM"0', '2', 'AM/PM2', 'Numeric'],
     ['"ddd"0', '2', 'ddd2', 'Numeric'],
 );

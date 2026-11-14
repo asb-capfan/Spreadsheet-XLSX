@@ -26,6 +26,8 @@ t/cell_references.t
 t/date_limits.t
 t/date_time_values.t
 t/date_time_values.xlsx
+t/escaped_date_formats.t
+t/escaped_date_formats.xlsx
 t/weekday_formats.t
 t/undefined_values.t
 t/relationship_whitespace.t

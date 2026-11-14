@@ -2,6 +2,10 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Preserve token boundaries around escaped and quoted literals when
+      detecting date formats (RT #87746). Add the original workbook and
+      regression tests for date types, raw values and formatted output.
+
     - Handle line breaks and other XML whitespace in Relationship tags
       (RT #111087). Add regression tests for LF, CRLF and attribute order.
 
