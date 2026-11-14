@@ -115,8 +115,37 @@ sub _load_workbook {
         my $inline = 0;
         my $parsing_inline = 0;
         my $inline_xml = '';
+        my @column_styles;
+        my $row_style;
         my $sheet_xml = __xml_contents($member_sheet);
         foreach ($sheet_xml =~ /(\<.*?\/?\>|.*?(?=\<))/gs) {
+            if (/^<col(?:\s|\/?>)/) {
+                my %attributes = /\b(min|max|style)="([^"]*)"/g;
+                if (defined $attributes{style}) {
+                    my ($min, $max) = @attributes{qw(min max)};
+                    die "Invalid XLSX column style range in '" . $member_sheet->fileName() . "'\n"
+                        unless defined($min) && defined($max)
+                            && $min =~ /\A[0-9]+\z/ && $max =~ /\A[0-9]+\z/
+                            && $min >= 1 && $min <= $max && $max <= 16384;
+                    die "Invalid XLSX column style index\n"
+                        unless $attributes{style} =~ /\A[0-9]+\z/;
+                    $column_styles[$_ - 1] = $attributes{style} for $min .. $max;
+                }
+                next;
+            } elsif (/^<row(?:\s|\/?>)/) {
+                my %attributes = /\b(s|customFormat)="([^"]*)"/g;
+                $row_style = undef;
+                if (defined($attributes{s}) && defined($attributes{customFormat})
+                    && $attributes{customFormat} =~ /\A(?:1|true)\z/) {
+                    die "Invalid XLSX row style index\n" unless $attributes{s} =~ /\A[0-9]+\z/;
+                    $row_style = $attributes{s};
+                }
+                $row_style = undef if /\/>$/;
+                next;
+            } elsif (/^<\/row\s*>/) {
+                $row_style = undef;
+                next;
+            }
             if (/^<c(?:\s|\/?>)/) {
 
                 my ($reference) = /\sr="([^"]*)"/;
@@ -125,7 +154,10 @@ sub _load_workbook {
 
                 $s   = m/t=\"s\"/      ? 1  : 0;
                 $s2  = m/t=\"str\"/    ? 1  : 0;
-                $sty = m/s="([0-9]+)"/ ? $1 : 0;
+                my ($cell_style) = /\bs="([0-9]+)"/;
+                $sty = defined($cell_style) ? $cell_style
+                    : defined($row_style) ? $row_style
+                    : defined($column_styles[$col]) ? $column_styles[$col] : 0;
 
                 $inline = /\bt="inlineStr"/ ? 1 : 0;
                 $parsing_v_tag = 0;
@@ -346,14 +378,9 @@ sub __load_styles {
             # List context avoids reusing $1 from an earlier successful match.
             my ($formatCode) = $styles_xml =~ /numFmtId="\Q$t1\E" formatCode="([^"]*)/;
             if (!defined($formatCode) || $formatCode eq '') {
-                if ($t1 == 9 || $t1 == 10) {
-                    $formatCode = '0.00000%';
-                } elsif ($t1 == 14) {
-                    $formatCode = 'yyyy-mm-dd';
-                } else {
-                    $formatCode = '';
-                }
-#                $formatCode = $formatter->FmtStringDef($t1);
+                # Retain the existing General fallback for ID 0. Other
+                # built-in IDs use the formatter's existing definition table.
+                $formatCode = $t1 == 0 ? '' : ($formatter->FmtStringDef($t1, {}) || '');
             }
             $style_info{$t1} = $formatCode;
         }
@@ -562,6 +589,19 @@ This module is a (quick and dirty) emulation of L<Spreadsheet::ParseExcel> for
 Excel 2007 (.xlsx) file format.  It supports styles and many of Excel's quirks,
 but not all.  It populates the classes from L<Spreadsheet::ParseExcel> for interoperability;
 including Workbook, Worksheet, and Cell.
+
+=head1 NUMBER FORMATS
+
+Built-in number formats use the formatter's definition table; explicit
+custom format codes take precedence. C<value()> returns the formatted
+representation, while numeric C<unformatted()> values retain the stored
+number. For example, the number C<14> with format C<0.00> is displayed as
+C<14.00> without changing its raw value.
+
+An explicit cell style (including C<s="0">) overrides default styles.
+Otherwise, a row style enabled by C<customFormat> takes precedence over a
+column style, followed by the workbook's default cell style. These defaults
+apply to cells read from the worksheet; empty cells are not synthesized.
 
 =head1 STRING CELLS
 

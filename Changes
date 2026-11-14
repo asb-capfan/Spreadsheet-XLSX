@@ -2,6 +2,11 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Resolve built-in number formats and apply row/column default styles
+      when a cell has no explicit style (RT #101636). Cell styles override
+      row styles, which override column defaults; preserve raw values.
+      Add regression tests for decimals, percentages and built-in dates.
+
     - Resolve absolute and relative worksheet relationship targets and
       normalize dot segments (RT #86667). Report missing targets with sheet
       and relationship details; reject external targets and root traversal.
