@@ -35,6 +35,7 @@ t/relationship_targets.t
 t/decimal_formats.t
 t/xml_entities.t
 t/converter_errors.t
+t/worksheet_names.t
 t/xml_entities.xlsx
 t/number_format_ids.t
 t/zip_limits.t

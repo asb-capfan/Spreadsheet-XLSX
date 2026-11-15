@@ -2,6 +2,10 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Decode XML entities and numeric character references once in worksheet
+      names before optional character conversion (RT #50705). Support lookup
+      by decoded names and report undefined name conversion results.
+
     - Abort with a clear error when a string converter returns undef
       (RT #84528), while continuing to accept empty converted strings.
 

@@ -69,8 +69,10 @@ sub _load_workbook {
             my ($k, $v) = split /=?"/;    #"
 
             if ($k eq 'name') {
-                $sheet->{Name} = $v;
+                $sheet->{Name} = __decode_xml_text($v);
                 $sheet->{Name} = $shared_info->{converter}->convert($sheet->{Name}) if defined $shared_info->{converter};
+                die "XLSX worksheet name conversion failed: the converter returned undef\n"
+                    unless defined $sheet->{Name};
             } elsif ($k eq 'r:id') {
 
                 $sheet->{_RelationshipId} = $v;
@@ -337,13 +339,19 @@ sub __shared_string_text {
         # Decode each XML fragment exactly once, before character conversion.
         # Decoding after concatenation would also reinterpret literal entities
         # assembled across rich-text runs.
-        $text =~ s/&((?:amp|lt|gt|quot|apos)|\#[0-9]+|\#x[0-9A-Fa-f]+);/__xml_entity($1)/ge;
+        $text = __decode_xml_text($text);
         $text = $converter->convert($text) if defined $converter;
         die "XLSX text conversion failed: the converter returned undef\n"
             unless defined $text;
         $str .= $text;
     }
     return $str;
+}
+
+sub __decode_xml_text {
+    my ($text) = @_;
+    $text =~ s/&((?:amp|lt|gt|quot|apos)|\#[0-9]+|\#x[0-9A-Fa-f]+);/__xml_entity($1)/ge;
+    return $text;
 }
 
 sub __xml_entity {
