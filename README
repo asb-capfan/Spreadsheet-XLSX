@@ -56,15 +56,8 @@ Building the .tar.gz archive also requires tar and gzip on PATH.
 
 4. Build a distribution directory and run all tests there.
 
-   In a POSIX shell:
-
-      RELEASE_TESTING=1 make disttest
-
-   In PowerShell with Strawberry Perl:
-
-      $env:RELEASE_TESTING = '1'
-      make disttest
-      Remove-Item Env:RELEASE_TESTING
+      RELEASE_TESTING=1 
+	  make disttest
 
    Check that all tests pass, including the release-only tests.
    disttest creates the distribution directory and generates META.json and
