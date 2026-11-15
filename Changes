@@ -2,6 +2,9 @@ Revision history for Perl extension Spreadsheet::XLSX.
 
 Unreleased
 
+    - Abort with a clear error when a string converter returns undef
+      (RT #84528), while continuing to accept empty converted strings.
+
     - Decode predefined XML entities and numeric character references once
       in shared and inline strings, including rich text and phonetic hints
       (RT #93962). Decode before the optional converter, preserve literal

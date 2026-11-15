@@ -339,6 +339,8 @@ sub __shared_string_text {
         # assembled across rich-text runs.
         $text =~ s/&((?:amp|lt|gt|quot|apos)|\#[0-9]+|\#x[0-9A-Fa-f]+);/__xml_entity($1)/ge;
         $text = $converter->convert($text) if defined $converter;
+        die "XLSX text conversion failed: the converter returned undef\n"
+            unless defined $text;
         $str .= $text;
     }
     return $str;
