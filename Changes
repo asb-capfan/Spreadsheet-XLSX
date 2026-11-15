@@ -1,6 +1,6 @@
 Revision history for Perl extension Spreadsheet::XLSX.
 
-Unreleased
+0.21  2026-11-15
 
     - Decode XML entities and numeric character references once in worksheet
       names before optional character conversion (RT #50705). Support lookup
